@@ -1,0 +1,9 @@
+|Role           |  Goal                                | Benefit                             | priority    |
+|---------------|--------------------------------------|-------------------------------------|-------------|
+|User           |I can log in                          |to access personal account           |Must         |
+|User           |I can log out                         |to end my session safely             |Must         |
+|Depot employee |add and edit a new member             |correctly registered and updated     |Must         |
+|Depot employee |add edit delete a child to a member   |so that families are linked          |Must         |
+|Depot employee |i can allow a member to self register |registration is easier               |should       |
+|Depot employee |i can add a new bike                  |inventory is always up to date       |Must         |
+|Depot employee |i can view a list of all bikes        |for a complete overview of all bikes |Must         |
