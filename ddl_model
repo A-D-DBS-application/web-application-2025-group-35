@@ -1,0 +1,66 @@
+-- 1. Table Adres 
+
+CREATE TABLE Adres (  
+adres_id SERIAL PRIMARY KEY,  
+straat VARCHAR(100),  
+huisnummer VARCHAR(10),  
+postcode VARCHAR(10), 
+gemeente VARCHAR(50), 
+land VARCHAR(50)  
+); 
+
+-- 2. Table Magazijn 
+CREATE TABLE Magazijn (  
+magazijn_id SERIAL PRIMARY KEY,  
+adres_id INT REFERENCES Adres(adres_id)  
+); 
+
+-- 3. Table Verantwoordelijke  
+CREATE TABLE Verantwoordelijke (  
+verantwoordelijke_id SERIAL PRIMARY KEY,  
+Voornaam VARCHAR(50), 
+Achternaam VARCHAR(50),  
+Email VARCHAR(100),  
+adres_id INT REFERENCES Adres(adres_id)  
+); 
+
+-- 4. Table Kind  
+CREATE TABLE Kind (  
+kind_id SERIAL PRIMARY KEY, 
+Voornaam VARCHAR(50),  
+Achternaam VARCHAR(50), 
+Geboortedatum DATE, 
+verantwoordelijke_id INT REFERENCES Verantwoordelijke(verantwoordelijke_id)  
+); 
+
+-- 5. Table Medewerker 
+CREATE TABLE Medewerker (  
+medewerker_id SERIAL PRIMARY KEY,  
+voornaam VARCHAR(50),  
+achternaam VARCHAR(50),  
+werknemersnummer VARCHAR(20),  
+magazijn_id INT NOT NULL REFERENCES Magazijn(magazijn_id)  
+); 
+
+-- 6. Item Status Type (create a specific enumerate type) 
+CREATE TYPE item_status AS ENUM ('uitgeleend', 'beschikbaar', 'op onderhoud'); 
+
+-- 7. Table Item 
+CREATE TABLE Item (  
+itemnr INT PRIMARY KEY,  
+status item_status NOT NULL DEFAULT 'beschikbaar', 
+verantwoordelijke_id INT REFERENCES Verantwoordelijke(verantwoordelijke_id), magazijn_id INT REFERENCES Magazijn(magazijn_id)  
+); 
+
+--8. betalingswijze
+CREATE TYPE betalingswijze as ENUM("contant", 'bankkaart');
+
+-- 8. Table Betaling  
+CREATE TABLE Betaling (  
+betaling_id SERIAL PRIMARY KEY,  
+itemnr INT NOT NULL REFERENCES Item(itemnr), 
+kind_id INT NOT NULL REFERENCES Kind(kind_id), 
+status betalingswijze DEFAULT "contant",
+bedrag DECIMAL(10,2),  
+datum DATE  
+); 
