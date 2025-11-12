@@ -1,0 +1,30 @@
+{% extends "index.html" %}
+
+{% block body %}
+<h1>Fietsen</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Itemnummer</th>
+      <th>Status</th>
+      <th>Verantwoordelijke</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for fiets in items %}
+    <tr>
+      <td>{{ fiets.itemnr }}</td>
+      <td>{{ fiets.status }}</td>
+      <td>
+        {% if fiets.verantwoordelijke %}   #Controleert of er een verantwoordelijke is gekoppeld aan de fiets.
+          {{ fiets.verantwoordelijke.voornaam }} {{ fiets.verantwoordelijke.achternaam }}
+        {% else %}
+          Niet toegewezen
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

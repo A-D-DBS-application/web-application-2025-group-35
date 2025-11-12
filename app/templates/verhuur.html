@@ -1,0 +1,31 @@
+{% extends "index.html" %}
+
+{% block body %}
+<h1>Verhuur</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Itemnummer</th>
+      <th>Kind</th>
+      <th>Verantwoordelijke</th>
+      <th>Bedrag</th>
+      <th>Datum</th>
+      <th>Tijd</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for betaling in betalingen %}
+    <tr>
+      <td>{{ betaling.item.itemnr }}</td>
+      <td>{{ betaling.kind.naam }}</td>
+      <td>{{ betaling.kind.verantwoordelijke.voornaam }} {{ betaling.kind.verantwoordelijke.achternaam }}</td>
+      <td>€{{ betaling.bedrag }}</td>
+      <td>{{ betaling.datum.strftime('%d-%m-%Y') }}</td>
+      <td>{{ betaling.tijd.strftime('%H:%M') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
