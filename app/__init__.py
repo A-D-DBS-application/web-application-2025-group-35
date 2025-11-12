@@ -2,7 +2,7 @@ from flask import Flask
 from .models import db #maakt het mogelijk om database te koppelen aan flask app
 from .config import Config #zorgt ervoor dat de app weet waar de database staat
 from flask_migrate import Migrate
-
+migrate = Migrate()
 def create_app():
     app=Flask(__name__)#Hier maak je de Flask app-instantie aan.
 #Dit is het centrale object dat routes, configuratie en extensies vasthoudt
