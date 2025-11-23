@@ -1,4 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import date
+from enum import Enum
 from datetime import datetime     #Dit importeert de datetime klasse uit Python’s standaardbibliotheek (datetime module).
                                   #Die wordt gebruikt om tijdstempels te maken (dit is dus voor die created_at kolom die supabase automatisch erbij zet hierin te krijgen).
 
@@ -52,6 +54,15 @@ class Kind(db.Model):
 
     betalingen = db.relationship('Betaling', backref='kind', lazy=True)
 
+    @property
+    def leeftijd(self):
+        today=date.today()
+        return(
+            today.year
+            - self.geboortedatum.year
+            - ((today.month, today.day) < (self.geboortedatum.month, self.geboortedatum.day))
+        )
+
     def __repr__(self):
         return f"<Kind {self.naam} ({self.geboortedatum})>"
 
@@ -81,17 +92,35 @@ class Medewerker(db.Model):
     def __repr__(self):
         return f"<Medewerker {self.voornaam} {self.achternaam}>"
 
+class StatusEnum(Enum):
+    BESCHIKBAAR= "beschikbaar"
+    VERHUURD="verhuurd"
+    ONDERHOUD="onderhoud"
 
+class LeeftijdEnum(Enum):
+    LOOPFIESTEN = "1-4 jaar"
+    PEUTER = "2-3 jaar"
+    KLEUTER = "4-6 jaar"
+    JUNIOR = "6-8 jaar"
+    KIDS = "8-12 jaar"
+    TEEN = "14-16 jaar"
+    OUDER_DAN_16 = "Ouder dan 16 jaar"
+    
 class Item(db.Model):
     __tablename__ = 'item'
     itemnr = db.Column(db.Integer, primary_key=True)   #vraag: moet dit geen item_id ofs zijn, staat in database gewoon als "item"
-    status = db.Column(db.String(50), nullable=False)  #vraag: we willen hier dat ze kunnen kiezen uit beschikbaar,... maar ik weet niet hoe je dit implementeert in de code dus moeten we nog even uitzoeken
+    status = db.Column(db.Enum(StatusEnum), nullable=False, default=StatusEnum.BESCHIKBAAR) #enumerate status
     verantwoordelijke_id = db.Column(db.Integer, db.ForeignKey('verantwoordelijke.verantwoordelijke_id'))
+    leeftijdscategorie = db.Column(db.Enum(LeeftijdEnum), nullable=True)
 
     betalingen = db.relationship('Betaling', backref='item', lazy=True)
 
     def __repr__(self):
         return f"<Item {self.itemnr} - {self.status}>"
+
+class BetalingswijzeEnum(Enum):
+    CONTANT="contant"
+    BANKKAART="bankkaart"
 
 
 class Betaling(db.Model):
@@ -99,7 +128,7 @@ class Betaling(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     itemnr = db.Column(db.Integer, db.ForeignKey('item.itemnr'), nullable=False)
     kind_id = db.Column(db.Integer, db.ForeignKey('kind.kind_id'), nullable=False)
-    betalingswijze = db.Column(db.Text, nullable=False)
+    betalingswijze = db.Column(db.Enum(BetalingswijzeEnum), nullable=False)
     bedrag = db.Column(db.Float, nullable=False)
     datum = db.Column(db.Date, nullable=False)
     tijd = db.Column(db.Time, nullable=False)
