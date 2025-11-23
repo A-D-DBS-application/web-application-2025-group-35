@@ -1,5 +1,5 @@
-from models import Item
-from models import StatusEnum #dit zou het algoritme moeten zijn dit moet nog toegevoegd worden via routes aan de app zelf
+from .models import Item
+from .models import StatusEnum #dit zou het algoritme moeten zijn dit moet nog toegevoegd worden via routes aan de app zelf
 from datetime import date
 def leeftijd_splitsen(categorie):
     categorie = categorie.strip()#haal spaties enzo weg

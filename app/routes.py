@@ -1,7 +1,7 @@
 # routes om data uit je modellen te halen en naar templates te sturen
 from flask import Blueprint, render_template, request
 from .models import db, Adres, Verantwoordelijke, Kind, Item, Betaling, Magazijn, Medewerker
-from .algoritme import fietsen_voor_leeftijd  # ons algoritme importeren
+from .algorithm import fietsen_voor_leeftijd  # ons algoritme importeren
 
 main = Blueprint('main', __name__)  # blueprint main gebruiken zodat alles net georganiseerd is
 
