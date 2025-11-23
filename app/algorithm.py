@@ -1,5 +1,6 @@
 from models import Item
-
+from models import StatusEnum #dit zou het algoritme moeten zijn dit moet nog toegevoegd worden via routes aan de app zelf
+from datetime import date
 def leeftijd_splitsen(categorie):
     categorie = categorie.strip()#haal spaties enzo weg
 
@@ -21,15 +22,23 @@ def leeftijd_splitsen(categorie):
     return min_leeftijd, max_leeftijd
 
 
-def fietsen_voor_leeftijd(leeftijd):
-    geschikte = []
-    fietsen = Item.query.all()#alle items
+def fietsen_voor_leeftijd(kind):
+    leeftijd=kind.leeftijd#haal de leeftijd van het kind
+    
+    fietsen = Item.query.filter_by(status=StatusEnum.BESCHIKBAAR).all() #alle items die beschikbaar zijn
+    fiets_scores=[]
 
     for fiets in fietsen:
-        min_leeftijd, max_leeftijd = leeftijd_splitsen(fiets.Leeftijdscategorie)
+        categorie_str = fiets.leeftijdscategorie.value
+        min_leeftijd, max_leeftijd = leeftijd_splitsen(categorie_str)
 
         if min_leeftijd <= leeftijd <= max_leeftijd:
-            geschikte.append(fiets)
-
-    return geschikte
+            score=2
+        elif min_leeftijd-1<=leeftijd<=max_leeftijd+1:
+            score=1
+        else:
+            score=0
+        fiets_scores.append((score,fiets))
+    fiets_scores.sort(key=lambda x: x[0], reverse=True)
+    return [fiets for score, fiets in fiets_scores]
 
