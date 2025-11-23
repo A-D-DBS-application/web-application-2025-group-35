@@ -1,50 +1,83 @@
-{% extends "index.html" %}  #gebruiken de bestaande index.html template als basis. Zo blijft de sidebar en layout hetzelfde. 
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Klanten - Bike Lending</title>
+  <style>
+    /* Kopieer hier de relevante CSS uit index.html voor sidebar, table, buttons, etc. */
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; display:flex; }
+    .sidebar { width:220px; background:#1e293b; color:white; display:flex; flex-direction:column; padding:20px; }
+    .sidebar h2 { cursor:pointer; margin-bottom:1rem; }
+    .nav-link { color:white; text-decoration:none; padding:10px; margin:5px 0; border-radius:5px; display:block; }
+    .nav-link:hover { background:#334155; }
+    .main-content { flex:1; padding:30px; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #ddd; padding:12px; text-align:left; }
+    th { background-color:#e2e8f0; }
+    .add-button { background:#2563eb; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; margin-bottom:10px; }
+    .add-button:hover { background:#1d4ed8; }
+    .search-bar input { padding:8px; border:1px solid #ccc; border-radius:4px; width:250px; margin-bottom:10px; }
+  </style>
+</head>
+<body>
 
-{% block body %}
-<div class="section-header">
-  <h1>Klanten</h1>
-  <button class="add-button" onclick="openPopup()">Nieuwe Klant Toevoegen</button>
-</div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Menu</h2>
+    <a href="/" class="nav-link">Home</a>
+    <a href="/klanten" class="nav-link">Klanten</a>
+    <a href="/fietsen" class="nav-link">Fietsen</a>
+    <a href="/verhuur" class="nav-link">Verhuur</a>
+    <a href="/financieel" class="nav-link">Financieel</a>
+  </div>
 
-<div class="search-bar">
-  <input type="text" id="search" placeholder="Zoek klant..." onkeyup="filterClients()">
-</div>
+  <!-- Main content -->
+  <div class="main-content">
+    <div class="section-header">
+      <h1>Klanten</h1>
+      <button class="add-button" onclick="alert('Nieuwe klant toevoegen')">Nieuwe Klant Toevoegen</button>
+    </div>
 
-<table id="client-table">
-  <thead>
-    <tr>
-      <th>Klant</th>
-      <th>Email</th>
-      <th>Adres</th>
-      <th>Kinderen</th>
-    </tr>
-  </thead>
-  <tbody id="client-body">
-    {% for klant in verantwoordelijken %} #Jinja2 loop die elke verantwoordelijke uit de database toont.
-    <tr>
-      <td>{{ klant.voornaam }} {{ klant.achternaam }}</td>   #Variabele uit Python wordt in HTML weergegeven.
-      <td>{{ klant.email }}</td>
-      <td>
-        {{ klant.adres.straat }} {{ klant.adres.huisnummer }}, 
-        {{ klant.adres.gemeente }}, {{ klant.adres.land }}
-      </td>
-      <td>
-        {% for kind in klant.kinderen %}   #Hiermee tonen we alle kinderen van een verantwoordelijke. 
-          {{ kind.naam }} ({{ kind.geboortedatum.strftime('%Y') }}){% if not loop.last %}, {% endif %}
+    <div class="search-bar">
+      <input type="text" id="search" placeholder="Zoek klant..." onkeyup="filterClients()">
+    </div>
+
+    <table id="client-table">
+      <thead>
+        <tr>
+          <th>Klant</th>
+          <th>Email</th>
+          <th>Adres</th>
+          <th>Kinderen</th>
+        </tr>
+      </thead>
+      <tbody id="client-body">
+        {% for klant in verantwoordelijken %}
+        <tr>
+          <td>{{ klant.voornaam }} {{ klant.achternaam }}</td>
+          <td>{{ klant.email }}</td>
+          <td>{{ klant.adres.straat }} {{ klant.adres.huisnummer }}, {{ klant.adres.gemeente }}, {{ klant.adres.land }}</td>
+          <td>
+            {% for kind in klant.kinderen %}
+              {{ kind.naam }} ({{ kind.geboortedatum.strftime('%Y') }}){% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </td>
+        </tr>
         {% endfor %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+      </tbody>
+    </table>
+  </div>
 
-<script>
-function filterClients() {
-  const query = document.getElementById('search').value.toLowerCase();
-  document.querySelectorAll('#client-body tr').forEach(row => {
-    const name = row.cells[0].textContent.toLowerCase();
-    row.style.display = name.includes(query) ? '' : 'none';
-  });
-}
-</script>
-{% endblock %}
+  <script>
+    function filterClients() {
+      const query = document.getElementById('search').value.toLowerCase();
+      document.querySelectorAll('#client-body tr').forEach(row => {
+        const name = row.cells[0].textContent.toLowerCase();
+        row.style.display = name.includes(query) ? '' : 'none';
+      });
+    }
+  </script>
+
+</body>
+</html>

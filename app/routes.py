@@ -7,7 +7,7 @@ main = Blueprint('main', __name__)  #blueprint main gebruiken zodat alles net ge
 #startpagina
 @main.route('/')
 def index():
-    return render_template('index.html') 
+    return render_template('index.html')   ## Hier renderen we gewoon index.html zoals het is
 
 # Pagina Klanten
 @main.route('/klanten')  #route die '/klanten' URL afhandelt.

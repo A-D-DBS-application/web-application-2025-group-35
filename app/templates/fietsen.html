@@ -1,30 +1,52 @@
-{% extends "index.html" %}
+<!-- templates/fietsen.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fietsen - Bike Lending</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f4f4f4; display:flex; }
+    .sidebar { width:220px; background:#1e293b; color:white; display:flex; flex-direction:column; padding:20px; }
+    .sidebar h2 { cursor:pointer; margin-bottom:1rem; }
+    .nav-link { color:white; text-decoration:none; padding:10px; margin:5px 0; border-radius:5px; display:block; }
+    .nav-link:hover { background:#334155; }
+    .main-content { flex:1; padding:30px; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #ddd; padding:12px; text-align:left; }
+    th { background-color:#e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Menu</h2>
+    <a href="/" class="nav-link">Home</a>
+    <a href="/klanten" class="nav-link">Klanten</a>
+    <a href="/fietsen" class="nav-link">Fietsen</a>
+    <a href="/verhuur" class="nav-link">Verhuur</a>
+    <a href="/financieel" class="nav-link">Financieel</a>
+  </div>
 
-{% block body %}
-<h1>Fietsen</h1>
-
-<table>
-  <thead>
-    <tr>
-      <th>Itemnummer</th>
-      <th>Status</th>
-      <th>Verantwoordelijke</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for fiets in items %}
-    <tr>
-      <td>{{ fiets.itemnr }}</td>
-      <td>{{ fiets.status }}</td>
-      <td>
-        {% if fiets.verantwoordelijke %}   #Controleert of er een verantwoordelijke is gekoppeld aan de fiets.
-          {{ fiets.verantwoordelijke.voornaam }} {{ fiets.verantwoordelijke.achternaam }}
-        {% else %}
-          Niet toegewezen
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endblock %}
+  <div class="main-content">
+    <h1>Fietsen</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Itemnr</th>
+          <th>Status</th>
+          <th>Verantwoordelijke</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.itemnr }}</td>
+          <td>{{ item.status }}</td>
+          <td>{{ item.verantwoordelijke.voornaam }} {{ item.verantwoordelijke.achternaam }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
