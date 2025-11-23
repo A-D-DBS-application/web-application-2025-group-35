@@ -1,25 +1,32 @@
-#routes om data uit je modellen te halen en naar templates te sturen
-from flask import Blueprint, render_template
+# routes om data uit je modellen te halen en naar templates te sturen
+from flask import Blueprint, render_template, request
 from .models import db, Adres, Verantwoordelijke, Kind, Item, Betaling, Magazijn, Medewerker
+from .algoritme import fietsen_voor_leeftijd  # ons algoritme importeren
 
-main = Blueprint('main', __name__)  #blueprint main gebruiken zodat alles net georganiseerd is
+main = Blueprint('main', __name__)  # blueprint main gebruiken zodat alles net georganiseerd is
 
-#startpagina
+# startpagina
 @main.route('/')
 def index():
-    return render_template('index.html')   ## Hier renderen we gewoon index.html zoals het is
+    return render_template('index.html')  # Hier renderen we gewoon index.html zoals het is
 
 # Pagina Klanten
-@main.route('/klanten')  #route die '/klanten' URL afhandelt.
+@main.route('/klanten')
 def klanten():
-    verantwoordelijken = Verantwoordelijke.query.all()   #haalt alle verantwoordelijken uit de database
-    return render_template('klanten.html', verantwoordelijken=verantwoordelijken) #stuurt de data naar de template
+    verantwoordelijken = Verantwoordelijke.query.all()  # haalt alle verantwoordelijken uit de database
+    return render_template('klanten.html', verantwoordelijken=verantwoordelijken)
 
 # Pagina Fietsen
 @main.route('/fietsen')
 def fietsen():
-    items = Item.query.all()
-    return render_template('fietsen.html', items=items)
+    leeftijd = request.args.get('leeftijd', type=int)  # haal ?leeftijd=12 op uit URL
+
+    if leeftijd is not None:
+        items = fietsen_voor_leeftijd(leeftijd)  # filter fietsen via algoritme
+    else:
+        items = Item.query.all()  # toon alles als geen leeftijd is opgegeven
+
+    return render_template('fietsen.html', items=items, leeftijd=leeftijd)
 
 # Pagina Verhuur
 @main.route('/verhuur')
@@ -32,4 +39,3 @@ def verhuur():
 def financieel():
     betalingen = Betaling.query.all()
     return render_template('financieel.html', betalingen=betalingen)
-

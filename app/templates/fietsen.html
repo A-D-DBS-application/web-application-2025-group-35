@@ -29,6 +29,17 @@
 
   <div class="main-content">
     <h1>Fietsen</h1>
+
+    <!-- Leeftijd filter formulier -->
+    <form method="get" action="/fietsen">
+      <label for="leeftijd">Filter op leeftijd:</label>
+      <input type="number" name="leeftijd" id="leeftijd" value="{{ leeftijd or '' }}" min="0">
+      <button type="submit">Toon geschikte fietsen</button>
+      {% if leeftijd %}
+        <a href="/fietsen">Reset</a>
+      {% endif %}
+    </form>
+
     <table>
       <thead>
         <tr>
