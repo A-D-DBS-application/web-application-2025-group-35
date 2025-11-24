@@ -1,9 +1,11 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bike Lending Portaal</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title or 'Bike Lending Portaal' }}</title>
+
   <style>
     * {margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif;}
     body {height: 100vh; background-color: #f4f4f4; display: flex;}
@@ -32,15 +34,6 @@
     .search-bar {margin-top: 10px; margin-bottom: 10px; display: flex; justify-content: flex-end;}
     .search-bar input {padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 250px;}
 
-    /* Login */
-    #login-screen {width: 100%; height: 100vh; background-color: #e2e8f0; display: flex; justify-content: center; align-items: center;}
-    .login-box {background: white; padding: 30px 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center;}
-    .login-box h2 {margin-bottom: 20px;}
-    .role-select {width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;}
-    .login-btn {width: 100%; background-color: #2563eb; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 1rem;}
-    .login-btn:hover {background-color: #1d4ed8;}
-    #portal {display: none; width: 100%;}
-
     /* Popup */
     .popup-overlay {position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 1000;}
     .popup {background: white; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 400px;}
@@ -55,185 +48,32 @@
     .edit-btn:hover {background-color: #059669;}
   </style>
 </head>
+
 <body>
 
-  <!-- Login -->
-  <div id="login-screen">
-    <div class="login-box">
-      <h2>Inloggen</h2>
-      <p>Kies je rol:</p>
-      <select id="role" class="role-select">
-        <option value="depot">Depotmedewerker</option>
-        <option value="finance">Financieel medewerker</option>
-      </select>
-      <button class="login-btn" onclick="login()">Inloggen</button>
-    </div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2 onclick="window.location.href='/'">Menu</h2>
+    <a href="/klanten" class="nav-link">Klanten</a>
+    <a href="/fietsen" class="nav-link">Fietsen</a>
+    <a href="/verhuur" class="nav-link">Verhuur</a>
+    <a href="/financieel" class="nav-link">Financieel</a>
   </div>
 
-  <!-- Portal -->
-  <div id="portal">
-    <div class="sidebar">
-      <h2 onclick="showSection('menu')">Menu</h2>
-      <a href="#" class="nav-link" onclick="showSection('klanten')">Klanten</a>
-      <a href="#" class="nav-link" onclick="showSection('fietsen')">Fietsen</a>
-      <a href="#" class="nav-link" onclick="showSection('verhuur')">Verhuur</a>
-      <a href="#" class="nav-link" id="financial-link" onclick="showSection('financieel')" style="display:none;">Financieel</a>
-    </div>
-
-    <div class="main-content" id="main-content">
-      <h1>Welkom bij het Bike Lending Portaal</h1>
-      <p>Selecteer een onderdeel uit het menu links.</p>
-    </div>
+  <!-- Main Content -->
+  <div class="main-content">
+    {% block main_content %}
+    {% endblock %}
   </div>
 
+  <!-- Popup -->
   <div class="popup-overlay" id="popup-overlay">
-    <div class="popup" id="popup-content"></div>
+    <div class="popup" id="popup-window">
+      {% block popup %}
+      {% endblock %}
+    </div>
   </div>
 
-  <script>
-    let userRole = null;
-    let editRow = null;
-    let currentSection = null;
-
-    function login() {
-      userRole = document.getElementById('role').value;
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('portal').style.display = 'flex';
-      if (userRole === 'finance') document.getElementById('financial-link').style.display = 'block';
-      showSection('menu');
-    }
-
-    function showSection(section) {
-      currentSection = section;
-      const main = document.getElementById('main-content');
-
-      if (section === 'menu') {
-        main.innerHTML = `<h1>Welkom bij het Bike Lending Portaal</h1><p>Selecteer een onderdeel uit het menu links.</p>`;
-      }
-
-      else if (section === 'klanten') {
-        main.innerHTML = `
-          <div class="section-header">
-            <div>
-              <h1>Klanten</h1>
-              <p class="count-text" id="klanten-count"></p>
-            </div>
-            <button class="add-button" onclick="openPopup('klanten')">Klant toevoegen</button>
-          </div>
-          <div class="search-bar">
-            <input type="text" id="search" placeholder="Zoek klant..." onkeyup="filterTable('klanten')">
-          </div>
-          <table id="klanten-table">
-            <thead>
-              <tr><th>Klant</th><th>Contact</th><th>Adres</th><th>Kinderen</th><th>Bewerken</th></tr>
-            </thead>
-            <tbody id="klanten-body">
-              <tr><td>Jan de Vries</td><td>jan.devries@example.com<br>0612345678</td><td>Kerkstraat 12, Utrecht</td><td>Lisa (10), Tom (8)</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-              <tr><td>Maria Jansen</td><td>maria.jansen@example.com<br>0623456789</td><td>Stationslaan 5, Amersfoort</td><td>Eva (9)</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-              <tr><td>Peter van Dijk</td><td>peter.vandijk@example.com<br>0634567890</td><td>Dorpsweg 45, Zeist</td><td>Jasper (11), Emma (7)</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-            </tbody>
-          </table>`;
-        updateCount('klanten');
-      }
-
-      else if (section === 'fietsen') {
-        main.innerHTML = `
-          <div class="section-header">
-            <div>
-              <h1>Fietsen</h1>
-              <p class="count-text" id="fietsen-count"></p>
-            </div>
-            <button class="add-button" onclick="openPopup('fietsen')">Fiets toevoegen</button>
-          </div>
-          <div class="search-bar">
-            <input type="text" id="search" placeholder="Zoek fiets..." onkeyup="filterTable('fietsen')">
-          </div>
-          <table id="fietsen-table">
-            <thead>
-              <tr><th>Naam</th><th>Merk</th><th>Model</th><th>Status</th><th>Bewerken</th></tr>
-            </thead>
-            <tbody id="fietsen-body">
-              <tr><td>Fiets A</td><td>Gazelle</td><td>CityGo</td><td>Verhuurd</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-              <tr><td>Fiets B</td><td>Batavus</td><td>Personal Bike</td><td>Op onderhoud</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-              <tr><td>Fiets C</td><td>Cortina</td><td>Common</td><td>Niet beschikbaar</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-              <tr><td>Fiets D</td><td>Stella</td><td>Vicenza</td><td>Verhuurd</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-              <tr><td>Fiets E</td><td>Cube</td><td>Trekking</td><td>Op onderhoud</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td></tr>
-            </tbody>
-          </table>`;
-        updateCount('fietsen');
-      }
-
-      else if (section === 'verhuur') {
-        main.innerHTML = `<h1>Verhuur</h1><p>Hier komt informatie over de verhuur.</p>`;
-      }
-
-      else if (section === 'financieel') {
-        main.innerHTML = userRole === 'finance' ? `<h1>Financieel</h1><p>Financiële gegevens worden hier weergegeven.</p>` : `<h1>Geen toegang</h1><p>Je hebt geen rechten om dit onderdeel te bekijken.</p>`;
-      }
-    }
-
-    function updateCount(type) {
-      const tbody = document.getElementById(type + '-body');
-      if (!tbody) return;
-      const count = tbody.querySelectorAll('tr').length;
-      const label = type === 'klanten' ? 'Aantal klanten: ' : 'Aantal fietsen: ';
-      document.getElementById(type + '-count').innerText = label + count;
-    }
-
-    function openPopup(type) {
-      editRow = null;
-      const popup = document.getElementById('popup-content');
-      popup.innerHTML = type === 'klanten'
-        ? `<h3>Nieuwe Klant Toevoegen</h3>
-          <label>Klantnaam:</label><input type="text" id="klant">
-          <label>Contact:</label><input type="text" id="contact">
-          <label>Adres:</label><input type="text" id="adres">
-          <label>Kinderen:</label><input type="text" id="kinderen">
-          <div class="popup-buttons"><button class="cancel-btn" onclick="closePopup()">Annuleren</button><button class="save-btn" onclick="saveData('klanten')">Opslaan</button></div>`
-        : `<h3>Nieuwe Fiets Toevoegen</h3>
-          <label>Naam:</label><input type="text" id="naam">
-          <label>Merk:</label><input type="text" id="merk">
-          <label>Model:</label><input type="text" id="model">
-          <label>Status:</label><input type="text" id="status" placeholder="Verhuurd / Op onderhoud / Niet beschikbaar">
-          <div class="popup-buttons"><button class="cancel-btn" onclick="closePopup()">Annuleren</button><button class="save-btn" onclick="saveData('fietsen')">Opslaan</button></div>`;
-      document.getElementById('popup-overlay').style.display = 'flex';
-    }
-
-    function closePopup() { document.getElementById('popup-overlay').style.display = 'none'; }
-
-    function saveData(type) {
-      const isClient = type === 'klanten';
-      const ids = isClient ? ['klant','contact','adres','kinderen'] : ['naam','merk','model','status'];
-      const values = ids.map(id => document.getElementById(id).value.trim());
-      if (values.some(v => !v)) { alert("Vul alle velden in."); return; }
-
-      const tbody = document.getElementById(type + '-body');
-      const row = document.createElement('tr');
-      row.innerHTML = isClient
-        ? `<td>${values[0]}</td><td>${values[1]}</td><td>${values[2]}</td><td>${values[3]}</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td>`
-        : `<td>${values[0]}</td><td>${values[1]}</td><td>${values[2]}</td><td>${values[3]}</td><td><button class="edit-btn" onclick="editRowData(this)">Bewerken</button></td>`;
-      tbody.appendChild(row);
-      closePopup();
-      updateCount(type);
-    }
-
-    function editRowData(button) {
-      editRow = button.parentElement.parentElement;
-      const cells = Array.from(editRow.cells).map(c => c.textContent);
-      const table = editRow.closest('table').id.includes('klanten') ? 'klanten' : 'fietsen';
-      openPopup(table);
-      const ids = table === 'klanten' ? ['klant','contact','adres','kinderen'] : ['naam','merk','model','status'];
-      ids.forEach((id,i) => document.getElementById(id).value = cells[i]);
-    }
-
-    function filterTable(type) {
-      const query = document.getElementById('search').value.toLowerCase();
-      document.querySelectorAll(`#${type}-body tr`).forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(query) ? '' : 'none';
-      });
-      updateCount(type);
-    }
-  </script>
 </body>
 </html>
+
