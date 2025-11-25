@@ -1,29 +1,302 @@
-{% extends "index.html" %}
+{% extends 'index.html' %}
+{% set title = "Financieel overzicht - Bike Lending Portaal" %}
 
 {% block main_content %}
-<h1>Financieel Overzicht</h1>
+
+<h1>Financieel</h1>
+<p class="count-text">Totaal betalingen: {{ betalingen|length }}</p>
+
+<button class="add-button" onclick="openAddBetalingPopup()">➕ Nieuwe betaling</button>
 
 <table>
-    <thead>
-        <tr>
-            <th>Item</th>
-            <th>Kind</th>
-            <th>Betalingswijze</th>
-            <th>Bedrag</th>
-            <th>Datum</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for betaling in betalingen %}
-        <tr>
-            <td>{{ betaling.item.itemnr }}</td>
-            <td>{{ betaling.kind.naam }}</td>
-            <td>{{ betaling.betalingswijze.value }}</td>
-            <td>€{{ "%.2f"|format(betaling.bedrag) }}</td>
-            <td>{{ betaling.datum.strftime('%d-%m-%Y') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+  <thead>
+    <tr>
+      <th>Betaling ID</th>
+      <th>Klant</th>
+      <th>Kind</th>
+      <th>Fiets</th>
+      <th>Bedrag (€)</th>
+      <th>Betalingswijze</th>
+      <th>Datum</th>
+      <th>Actie</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in betalingen %}
+    <tr>
+      <td>{{ "%05d" % b.id }}</td>
+
+      <!-- KLANT -->
+      <td>
+        {% if b.kind and b.kind.verantwoordelijke %}
+        <button
+          type="button"
+          class="link-btn"
+          data-id="{{ b.kind.verantwoordelijke.verantwoordelijke_id }}"
+          data-voornaam="{{ b.kind.verantwoordelijke.voornaam }}"
+          data-achternaam="{{ b.kind.verantwoordelijke.achternaam }}"
+          data-email="{{ b.kind.verantwoordelijke.email }}"
+          data-straat="{{ b.kind.verantwoordelijke.adres.straat }}"
+          data-huisnummer="{{ b.kind.verantwoordelijke.adres.huisnummer }}"
+          data-postcode="{{ b.kind.verantwoordelijke.adres.postcode }}"
+          data-gemeente="{{ b.kind.verantwoordelijke.adres.gemeente }}"
+          data-land="{{ b.kind.verantwoordelijke.adres.land }}"
+          data-kind-namen="{{ b.kind.verantwoordelijke.kinderen|map(attribute='naam')|join('||') }}"
+          data-kind-datums="{{ b.kind.verantwoordelijke.kinderen|map(attribute='geboortedatum')|join('||') }}"
+          onclick="openKlantPopup(this)"
+        >
+          {{ "%05d" % b.kind.verantwoordelijke.verantwoordelijke_id }} –
+          {{ b.kind.verantwoordelijke.voornaam }} {{ b.kind.verantwoordelijke.achternaam }}
+        </button>
+        {% else %}
+        -
+        {% endif %}
+      </td>
+
+      <!-- KIND -->
+      <td>
+        {% if b.kind %}
+          {{ b.kind.naam }} ({{ b.kind.leeftijd }} jaar)
+        {% else %}-{% endif %}
+      </td>
+
+      <!-- FIETS -->
+      <td>
+        {% if b.item %}
+          {{ "%05d" % b.itemnr }} – {{ b.item.merk }} {{ b.item.model }}
+        {% else %}-{% endif %}
+      </td>
+
+      <td>{{ "%.2f"|format(b.bedrag) }}</td>
+      <td>{{ b.betalingswijze.value }}</td>
+      <td>{{ b.datum.strftime('%d-%m-%Y') }}</td>
+
+      <!-- BEWERKEN -->
+      <td>
+        <button class="edit-btn"
+          onclick="openEditBetalingPopup(
+            `{{ b.id }}`,
+            `{{ b.itemnr }}`,
+            `{{ b.kind_id }}`,
+            `{{ b.betalingswijze.name }}`,
+            `{{ b.datum.isoformat() }}`,
+            `{{ '%.2f'|format(b.bedrag) }}`
+          )">
+          Bewerken
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
+
 {% endblock %}
+
+{% block popup %}
+
+<!-- ================== ADD BETALING ================== -->
+<div id="add-betaling-popup" class="popup-overlay">
+  <form class="popup" method="POST" action="/financieel/toevoegen">
+
+    <h3>Nieuwe betaling</h3>
+
+    <label>Klant:</label>
+    <select id="betaling-klant-select" onchange="updateKinderList()" required>
+      <option value="">-- Kies een klant --</option>
+      {% for v in verantwoordelijken %}
+      <option value="{{ v.verantwoordelijke_id }}">
+        {{ "%05d" % v.verantwoordelijke_id }} – {{ v.voornaam }} {{ v.achternaam }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <label>Kind:</label>
+    <select name="kind_id" id="betaling-kind-select" required>
+      <option value="">-- Kies een kind --</option>
+    </select>
+
+    <label>Fiets:</label>
+    <select name="itemnr" id="betaling-item-select" required>
+      {% for f in fietsen %}
+      <option value="{{ f.itemnr }}">
+        {{ "%05d" % f.itemnr }} – {{ f.merk }} {{ f.model }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <label>Betalingswijze:</label>
+    <select name="betalingswijze" required>
+      {% for b in BetalingswijzeEnum %}
+      <option value="{{ b.name }}">{{ b.value }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Bedrag (€):</label>
+    <input type="number" name="bedrag" step="0.01" required>
+
+    <label>Datum:</label>
+    <input type="date" name="datum" required>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeAddBetalingPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- ================== KLANT POPUP ================== -->
+<div id="klant-popup" class="popup-overlay">
+  <form id="klant-form" class="popup" method="POST">
+
+    <h3>Klantgegevens</h3>
+
+    <label>Voornaam:</label>
+    <input type="text" name="voornaam" id="klant-voornaam" required>
+
+    <label>Achternaam:</label>
+    <input type="text" name="achternaam" id="klant-achternaam" required>
+
+    <label>Email:</label>
+    <input type="email" name="email" id="klant-email" required>
+
+    <label>Straat:</label>
+    <input type="text" name="straat" id="klant-straat" required>
+
+    <label>Huisnummer:</label>
+    <input type="text" name="huisnummer" id="klant-huisnummer" required>
+
+    <label>Postcode:</label>
+    <input type="number" name="postcode" id="klant-postcode" required>
+
+    <label>Gemeente:</label>
+    <input type="text" name="gemeente" id="klant-gemeente" required>
+
+    <label>Land:</label>
+    <input type="text" name="land" id="klant-land" required>
+
+    <hr>
+
+    <label>Kinderen:</label>
+    <div id="klant-children-container"></div>
+
+    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">
+      Kind toevoegen
+    </button>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Sluiten</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- ================== SCRIPTS ================== -->
+<script>
+const KIND_DATA = JSON.parse(`{{ klant_kind_data | tojson | safe }}`);
+
+function openAddBetalingPopup() {
+  document.getElementById("add-betaling-popup").style.display = "flex";
+}
+function closeAddBetalingPopup() {
+  document.getElementById("add-betaling-popup").style.display = "none";
+}
+
+function updateKinderList() {
+  const klantId = document.getElementById("betaling-klant-select").value;
+  const kindSelect = document.getElementById("betaling-kind-select");
+
+  kindSelect.innerHTML = "<option value=''>-- Kies een kind --</option>";
+
+  if (KIND_DATA[klantId]) {
+    KIND_DATA[klantId].forEach(child => {
+      const opt = document.createElement("option");
+      opt.value = child.id;
+      opt.textContent = `${child.naam} (${child.leeftijd} jaar)`;
+      kindSelect.appendChild(opt);
+    });
+  }
+}
+
+function openKlantPopup(btn) {
+  const id = btn.dataset.id;
+  document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
+
+  document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
+  document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
+  document.getElementById("klant-email").value = btn.dataset.email;
+
+  document.getElementById("klant-straat").value = btn.dataset.straat;
+  document.getElementById("klant-huisnummer").value = btn.dataset.huisnummer;
+  document.getElementById("klant-postcode").value = btn.dataset.postcode;
+  document.getElementById("klant-gemeente").value = btn.dataset.gemeente;
+  document.getElementById("klant-land").value = btn.dataset.land;
+
+  const container = document.getElementById("klant-children-container");
+  container.innerHTML = "";
+
+  const kinderen = KIND_DATA[id] || [];
+  kinderen.forEach(k => {
+    addChildRow("klant-children-container", k.naam, k.geboortedatum);
+  });
+
+  document.getElementById("klant-popup").style.display = "flex";
+}
+
+function closeKlantPopup() {
+  document.getElementById("klant-popup").style.display = "none";
+}
+
+function addChildRow(containerId, naam = "", datum = "") {
+  const container = document.getElementById(containerId);
+  const row = document.createElement("div");
+  row.style.display = "flex";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.name = "kind_namen[]";
+  nameInput.placeholder = "Naam";
+  nameInput.value = naam;
+
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.name = "kind_datums[]";
+  dateInput.value = datum;
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.textContent = "✖";
+  removeBtn.className = "cancel-btn";
+  removeBtn.onclick = () => row.remove();
+
+  row.appendChild(nameInput);
+  row.appendChild(dateInput);
+  row.appendChild(removeBtn);
+  container.appendChild(row);
+}
+
+function openEditBetalingPopup(id, itemnr, kind_id, betalingswijze, datum, bedrag) {
+  console.log("EDIT BETALING:", { id, itemnr, kind_id, betalingswijze, datum, bedrag });
+}
+</script>
+
+<style>
+.link-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+</style>
+
+{% endblock %}
+
+
+
+
+
+
 

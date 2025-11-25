@@ -25,13 +25,33 @@
     <tr>
       <td>{{ "%05d" % v.verhuur_id }}</td>
       <td>
-        Fiets {{ v.itemnr }}
-        {% if v.item %} ({{ v.item.status.value }}) {% endif %}
+        {% if v.item %}
+          {{ "%05d" % v.itemnr }} – {{ v.item.merk }} {{ v.item.model }} ({{ v.item.status.value }})
+        {% else %}
+          Fiets {{ v.itemnr }}
+        {% endif %}
       </td>
       <td>
         {% if v.verantwoordelijke %}
-          {{ v.verantwoordelijke.voornaam }} {{ v.verantwoordelijke.achternaam }}
-        {% else %}-{% endif %}
+          <button
+            type="button"
+            class="link-btn"
+            data-id="{{ v.verantwoordelijke.verantwoordelijke_id }}"
+            data-voornaam="{{ v.verantwoordelijke.voornaam }}"
+            data-achternaam="{{ v.verantwoordelijke.achternaam }}"
+            data-email="{{ v.verantwoordelijke.email }}"
+            data-straat="{{ v.verantwoordelijke.adres.straat }}"
+            data-huisnummer="{{ v.verantwoordelijke.adres.huisnummer }}"
+            data-postcode="{{ v.verantwoordelijke.adres.postcode }}"
+            data-gemeente="{{ v.verantwoordelijke.adres.gemeente }}"
+            data-land="{{ v.verantwoordelijke.adres.land }}"
+            onclick="openKlantPopup(this)"
+          >
+            {{ "%05d" % v.verantwoordelijke.verantwoordelijke_id }} – {{ v.verantwoordelijke.voornaam }} {{ v.verantwoordelijke.achternaam }}
+          </button>
+        {% else %}
+          -
+        {% endif %}
       </td>
       <td>
         {% if v.kind %}
@@ -41,13 +61,20 @@
       <td>
         {{ v.startdatum.strftime('%d-%m-%Y') }} – {{ v.einddatum.strftime('%d-%m-%Y') }}
       </td>
-      <td>{{ v.status }}</td>
       <td>
-        {% if v.status == 'actief' %}
-        <form method="POST" action="/verhuur/beëindigen/{{ v.verhuur_id }}" style="display:inline;">
+        {{ v.status.value }}
+      </td>
+      <td>
+        {% if v.status == VerhuurStatusEnum.ACTIEF %}
+        <form method="POST"
+              action="/verhuur/beëindigen/{{ v.verhuur_id }}"
+              style="display:inline;"
+              onsubmit="return confirm('Ben je zeker dat je deze verhuur wil beëindigen?');">
           <button type="submit" class="cancel-btn">Beëindig verhuur</button>
         </form>
-        {% else %}-{% endif %}
+        {% else %}
+          -
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -58,6 +85,7 @@
 
 {% block popup %}
 
+<!-- ============== NIEUWE VERHUUR POPUP ============== -->
 <div id="verhuur-popup" class="popup-overlay">
   <form class="popup" method="POST" action="/verhuur/toevoegen">
     
@@ -86,8 +114,7 @@
       <option value="">-- Kies een fiets --</option>
       {% for f in beschikbare_fietsen %}
       <option value="{{ f.itemnr }}">
-        {{ f.itemnr }} - {{ f.leeftijdscategorie.value if f.leeftijdscategorie else "geen categorie" }}
-        ({{ f.status.value }})
+        {{ "%05d" % f.itemnr }} – {{ f.merk }} {{ f.model }} ({{ f.status.value }})
       </option>
       {% endfor %}
     </select>
@@ -112,7 +139,54 @@
   </form>
 </div>
 
-<!-- 🔥 VEILIGE JSON INJECTIE -->
+<!-- ============== KLANT-DETAIL/BEWERKEN POPUP ============== -->
+<div id="klant-popup" class="popup-overlay">
+  <form id="klant-form" class="popup" method="POST">
+    <h3>Klantgegevens</h3>
+
+    <label>Voornaam:</label>
+    <input type="text" name="voornaam" id="klant-voornaam" required>
+
+    <label>Achternaam:</label>
+    <input type="text" name="achternaam" id="klant-achternaam" required>
+
+    <label>Email:</label>
+    <input type="email" name="email" id="klant-email" required>
+
+    <hr>
+
+    <label>Straat:</label>
+    <input type="text" name="straat" id="klant-straat" required>
+
+    <label>Huisnummer:</label>
+    <input type="text" name="huisnummer" id="klant-huisnummer" required>
+
+    <label>Postcode:</label>
+    <input type="number" name="postcode" id="klant-postcode" required>
+
+    <label>Gemeente:</label>
+    <input type="text" name="gemeente" id="klant-gemeente" required>
+
+    <label>Land:</label>
+    <input type="text" name="land" id="klant-land" required>
+
+    <hr>
+
+    <label>Kinderen:</label>
+    <div id="klant-children-container"></div>
+
+    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">
+      Kind toevoegen
+    </button>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+  </form>
+</div>
+
+<!-- JSON met klant-kind data -->
 <script id="klant-kind-data" type="application/json">
   {{ klant_kind_data | tojson | safe }}
 </script>
@@ -128,6 +202,39 @@
 
   function closeVerhuurPopup() {
     document.getElementById("verhuur-popup").style.display = "none";
+  }
+
+  function openKlantPopup(btn) {
+    const id = btn.dataset.id;
+
+    document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
+    document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
+    document.getElementById("klant-email").value = btn.dataset.email;
+
+    document.getElementById("klant-straat").value = btn.dataset.straat;
+    document.getElementById("klant-huisnummer").value = btn.dataset.huisnummer;
+    document.getElementById("klant-postcode").value = btn.dataset.postcode;
+    document.getElementById("klant-gemeente").value = btn.dataset.gemeente;
+    document.getElementById("klant-land").value = btn.dataset.land;
+
+    const container = document.getElementById("klant-children-container");
+    container.innerHTML = "";
+
+    const kinderen = KLANT_KIND_DATA[id] || [];
+    if (kinderen.length === 0) {
+      addChildRow("klant-children-container");
+    } else {
+      kinderen.forEach(k =>
+        addChildRow("klant-children-container", k.naam, k.geboortedatum || "")
+      );
+    }
+
+    document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
+    document.getElementById("klant-popup").style.display = "flex";
+  }
+
+  function closeKlantPopup() {
+    document.getElementById("klant-popup").style.display = "none";
   }
 
   function updateKindList() {
@@ -166,12 +273,67 @@
     container.appendChild(list);
   }
 
+  function addChildRow(containerId, naam = "", datum = "") {
+    const container = document.getElementById(containerId);
+
+    const row = document.createElement("div");
+    row.className = "child-row";
+    row.style.display = "flex";
+    row.style.marginTop = "6px";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.name = "kind_namen[]";
+    nameInput.placeholder = "Naam";
+    nameInput.value = naam;
+    nameInput.required = true;
+    nameInput.style.flex = "1";
+
+    const dateInput = document.createElement("input");
+    dateInput.type = "date";
+    dateInput.name = "kind_datums[]";
+    dateInput.value = datum || "";
+    dateInput.required = true;
+    dateInput.style.marginLeft = "6px";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.textContent = "✖";
+    removeBtn.className = "cancel-btn";
+    removeBtn.style.marginLeft = "6px";
+    removeBtn.onclick = () => row.remove();
+
+    row.appendChild(nameInput);
+    row.appendChild(dateInput);
+    row.appendChild(removeBtn);
+
+    container.appendChild(row);
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("klant-select").addEventListener("change", updateKindList);
+    const klantSelect = document.getElementById("klant-select");
+    if (klantSelect) {
+      klantSelect.addEventListener("change", updateKindList);
+    }
   });
 </script>
 
+<style>
+  .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #2563eb;
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+  }
+</style>
+
 {% endblock %}
+
+
 
 
 

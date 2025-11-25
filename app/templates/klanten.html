@@ -31,7 +31,7 @@
       <td>{{ v.voornaam }}</td>
       <td>{{ v.achternaam }}</td>
       <td>{{ v.email }}</td>
-      <td>{{ v.adres.straat }} {{ v.adres.huisnummer }}, {{ v.adres.gemeente }}</td>
+      <td>{{ v.adres.straat }} {{ v.adres.huisnummer }}, {{ v.adres.postcode }} {{ v.adres.gemeente }}, {{ v.adres.land }}</td>
       <td>
         {% if v.kinderen %}
           <ul style="margin:0; padding-left:18px;">
@@ -50,6 +50,11 @@
           data-voornaam="{{ v.voornaam }}"
           data-achternaam="{{ v.achternaam }}"
           data-email="{{ v.email }}"
+          data-straat="{{ v.adres.straat }}"
+          data-huisnummer="{{ v.adres.huisnummer }}"
+          data-postcode="{{ v.adres.postcode }}"
+          data-gemeente="{{ v.adres.gemeente }}"
+          data-land="{{ v.adres.land }}"
           data-kind-namen="{{ v.kinderen|map(attribute='naam')|join('||') }}"
           data-kind-datums="{{ v.kinderen|map(attribute='geboortedatum')|join('||') }}"
           onclick="openEditPopup(this)"
@@ -128,6 +133,21 @@
     <label>Email:</label>
     <input type="email" name="email" id="edit-email" required>
 
+    <label>Straat:</label>
+    <input type="text" name="straat" id="edit-straat" required>
+
+    <label>Huisnummer:</label>
+    <input type="text" name="huisnummer" id="edit-huisnummer" required>
+
+    <label>Postcode:</label>
+    <input type="number" name="postcode" id="edit-postcode" required>
+
+    <label>Gemeente:</label>
+    <input type="text" name="gemeente" id="edit-gemeente" required>
+
+    <label>Land:</label>
+    <input type="text" name="land" id="edit-land" required>
+
     <hr>
 
     <label>Kinderen:</label>
@@ -197,6 +217,7 @@ function openAddPopup() {
 
   document.getElementById("add-popup").style.display = "flex";
 }
+
 function closeAddPopup() {
   document.getElementById("add-popup").style.display = "none";
 }
@@ -213,6 +234,12 @@ function openEditPopup(btn) {
   document.getElementById("edit-achternaam").value = btn.dataset.achternaam;
   document.getElementById("edit-email").value = btn.dataset.email;
 
+  document.getElementById("edit-straat").value = btn.dataset.straat;
+  document.getElementById("edit-huisnummer").value = btn.dataset.huisnummer;
+  document.getElementById("edit-postcode").value = btn.dataset.postcode;
+  document.getElementById("edit-gemeente").value = btn.dataset.gemeente;
+  document.getElementById("edit-land").value = btn.dataset.land;
+
   if (namen.length === 1 && namen[0] === "") {
     addChildRow("edit-children-container");
   } else {
@@ -222,12 +249,14 @@ function openEditPopup(btn) {
   document.getElementById("edit-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("edit-popup").style.display = "flex";
 }
+
 function closeEditPopup() {
   document.getElementById("edit-popup").style.display = "none";
 }
 </script>
 
 {% endblock %}
+
 
 
 

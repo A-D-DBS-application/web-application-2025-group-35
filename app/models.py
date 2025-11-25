@@ -24,7 +24,6 @@ class LeeftijdEnum(Enum):
     OUDER_DAN_16 = "Ouder dan 16 jaar"
 
 
-
 class BetalingswijzeEnum(Enum):
     CONTANT = "Contant"
     KAART = "Kaart"
@@ -51,11 +50,10 @@ class Adres(db.Model):
     adres_id = db.Column(db.Integer, primary_key=True)
     straat = db.Column(db.Text, nullable=False)
     huisnummer = db.Column(db.String(20), nullable=False)
-    postcode = db.Column(db.Integer, nullable=False)   # Tip: maak dit String(10)
+    postcode = db.Column(db.Integer, nullable=False)
     gemeente = db.Column(db.Text, nullable=False)
     land = db.Column(db.Text, nullable=False)
 
-    # FIXED: correct spelling
     verantwoordelijken = db.relationship("Verantwoordelijke", backref="adres", lazy=True)
 
 
@@ -70,6 +68,7 @@ class Verantwoordelijke(db.Model):
 
     kinderen = db.relationship("Kind", backref="verantwoordelijke", lazy=True)
     items = db.relationship("Item", backref="verantwoordelijke", lazy=True)
+    verhuren = db.relationship("Verhuur", backref="verantwoordelijke", lazy=True)
 
 
 class Kind(db.Model):
@@ -79,6 +78,8 @@ class Kind(db.Model):
     naam = db.Column(db.Text, nullable=False)
     geboortedatum = db.Column(db.Date, nullable=False)
     verantwoordelijke_id = db.Column(db.Integer, db.ForeignKey("verantwoordelijke.verantwoordelijke_id"), nullable=False)
+
+    betalingen = db.relationship("Betaling", backref="kind", lazy=True)
 
     @property
     def leeftijd(self):
@@ -94,8 +95,6 @@ class Item(db.Model):
     __tablename__ = 'item'
 
     itemnr = db.Column(db.Integer, primary_key=True)
-
-    # NEW: correct and consistent with Supabase
     merk = db.Column(db.Text, nullable=False)
     model = db.Column(db.Text, nullable=False)
 
@@ -111,11 +110,15 @@ class Item(db.Model):
         nullable=True
     )
 
+    betalingen = db.relationship("Betaling", backref="item", lazy=True)
+
 
 class Betaling(db.Model):
     __tablename__ = "betaling"
 
     id = db.Column(db.Integer, primary_key=True)
+
+    # FK's
     itemnr = db.Column(db.Integer, db.ForeignKey("item.itemnr"), nullable=False)
     kind_id = db.Column(db.Integer, db.ForeignKey("kind.kind_id"), nullable=False)
 
@@ -128,13 +131,18 @@ class Betaling(db.Model):
     datum = db.Column(db.Date, nullable=False)
     tijd = db.Column(db.Time, nullable=False)
 
+    # Relationships (automatisch beschikbaar via backref)
+    # item     -> b.item
+    # kind     -> b.kind
+    # ouder    -> b.kind.verantwoordelijke
+
 
 # -----------------------------------------------------
 # VERHUUR
 # -----------------------------------------------------
 
 class Verhuur(db.Model):
-    __tablename__ = "verhuur"   # Correct for Supabase
+    __tablename__ = "verhuur"
 
     verhuur_id = db.Column(db.Integer, primary_key=True)
     itemnr = db.Column(db.Integer, db.ForeignKey("item.itemnr"), nullable=False)
@@ -150,10 +158,11 @@ class Verhuur(db.Model):
         default=VerhuurStatusEnum.ACTIEF.value
     )
 
-    # Relationships (sqlalchemy handles backrefs)
     item = db.relationship("Item")
     kind = db.relationship("Kind")
-    verantwoordelijke = db.relationship("Verantwoordelijke")
+    # ❌ verwijderd: verantwoordelijke = db.relationship("Verantwoordelijke")
+
+
 
 
 
