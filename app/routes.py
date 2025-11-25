@@ -1,134 +1,139 @@
-# routes voor data ophalen, tonen en aanpassen
+from datetime import datetime
 from flask import Blueprint, render_template, request, redirect
-from .models import db, Adres, Verantwoordelijke, Kind, Item, Betaling
-from .algorithm import fietsen_voor_leeftijd
-from .models import StatusEnum, LeeftijdEnum
+
+from .models import (
+    db,
+    Adres,
+    Verantwoordelijke,
+    Kind,
+    Item,
+    Betaling,
+    Verhuur,
+    StatusEnum,
+    LeeftijdEnum,
+    VerhuurStatusEnum
+)
 
 main = Blueprint("main", __name__)
 
 
-# ============================================
-# HOME
-# ============================================
+
+# ----------------------- HOME ------------------------
 @main.route("/")
 def index():
     return render_template("home.html")
 
 
-# ============================================
-# KLANTEN PAGINA
-# ============================================
+
+# ---------------------- KLANTEN ----------------------
 @main.route("/klanten")
 def klanten():
     verantwoordelijken = Verantwoordelijke.query.all()
     return render_template("klanten.html", verantwoordelijken=verantwoordelijken)
 
 
-# ---------- KLANT TOEVOEGEN ----------
+
 @main.post("/klanten/toevoegen")
 def klant_toevoegen():
-    # 1. Basis klantgegevens
-    voornaam = request.form.get("voornaam")
-    achternaam = request.form.get("achternaam")
-    email = request.form.get("email")
 
-    # 2. Adres opslaan
+    # --- Adres ---
     adres = Adres(
         straat=request.form.get("straat"),
         huisnummer=request.form.get("huisnummer"),
         postcode=request.form.get("postcode"),
         gemeente=request.form.get("gemeente"),
-        land=request.form.get("land")
+        land=request.form.get("land"),
     )
     db.session.add(adres)
-    db.session.flush()  # zodat adres_id meteen beschikbaar is
+    db.session.flush()
 
-    # 3. Klant zelf opslaan
+    # --- Verantwoordelijke ---
     klant = Verantwoordelijke(
-        voornaam=voornaam,
-        achternaam=achternaam,
-        email=email,
-        adres_id=adres.adres_id
+        voornaam=request.form.get("voornaam"),
+        achternaam=request.form.get("achternaam"),
+        email=request.form.get("email"),
+        adres_id=adres.adres_id,
     )
     db.session.add(klant)
     db.session.flush()
 
-    # 4. Kinderen opslaan
-    kind_namen = request.form.getlist("kind_namen[]")
-    kind_geboortedata = request.form.getlist("kind_datums[]")
-
-    for naam, datum in zip(kind_namen, kind_geboortedata):
-        if naam.strip() != "":
-            nieuw_kind = Kind(
+    # --- Kinderen ---
+    for naam, datum in zip(
+        request.form.getlist("kind_namen[]"),
+        request.form.getlist("kind_datums[]")
+    ):
+        if naam.strip():
+            db.session.add(Kind(
                 naam=naam,
                 geboortedatum=datum,
                 verantwoordelijke_id=klant.verantwoordelijke_id
-            )
-            db.session.add(nieuw_kind)
+            ))
 
     db.session.commit()
-
     return redirect("/klanten")
 
 
-# ---------- KLANT BEWERKEN ----------
+
 @main.post("/klanten/bewerken/<int:id>")
 def klant_bewerken(id):
     klant = Verantwoordelijke.query.get_or_404(id)
 
-    # Klant gegevens
     klant.voornaam = request.form.get("voornaam")
     klant.achternaam = request.form.get("achternaam")
     klant.email = request.form.get("email")
 
-    # KINDEREN
-    # 1) Oude kinderen verwijderen
+    # Oude kinderen verwijderen
     Kind.query.filter_by(verantwoordelijke_id=id).delete()
 
-    # 2) Nieuwe toevoegen
-    kind_namen = request.form.getlist("kind_namen[]")
-    kind_datums = request.form.getlist("kind_datums[]")
-
-    for naam, datum in zip(kind_namen, kind_datums):
-        if naam.strip() != "":
-            nieuw_kind = Kind(
+    # Nieuwe kinderen opslaan
+    for naam, datum in zip(
+        request.form.getlist("kind_namen[]"),
+        request.form.getlist("kind_datums[]")
+    ):
+        if naam.strip():
+            db.session.add(Kind(
                 naam=naam,
                 geboortedatum=datum,
                 verantwoordelijke_id=id
-            )
-            db.session.add(nieuw_kind)
+            ))
 
     db.session.commit()
     return redirect("/klanten")
 
-# === Fiets overzicht ===
+
+
+# ===========================================================
+# FIETSEN
+# ===========================================================
+
 @main.route("/fietsen")
 def fietsen():
     fietsen = Item.query.all()
-    verantwoordelijken = Verantwoordelijke.query.all()
     return render_template(
         "fietsen.html",
         fietsen=fietsen,
-        verantwoordelijken=verantwoordelijken,
         StatusEnum=StatusEnum,
         LeeftijdEnum=LeeftijdEnum
     )
 
-# === Nieuwe fiets toevoegen ===
+
 @main.post("/fietsen/toevoegen")
 def fiets_toevoegen():
-    itemnr = request.form["itemnr"]
-    status = StatusEnum[request.form["status"]]
-    leeftijd_raw = request.form.get("leeftijd")
-    verantwoordelijke_id = request.form.get("verantwoordelijke_id") or None
 
+    merk = request.form.get("merk")
+    model = request.form.get("model")
+
+    status = StatusEnum[request.form["status"]]
+
+    leeftijd_raw = request.form.get("leeftijd")
     leeftijd = LeeftijdEnum[leeftijd_raw] if leeftijd_raw else None
 
     nieuwe_fiets = Item(
-        itemnr=itemnr,
+        merk=merk,
+        model=model,
         status=status,
         leeftijdscategorie=leeftijd,
-        verantwoordelijke_id=verantwoordelijke_id
+        verantwoordelijke_id=None    # altijd leeg
     )
 
     db.session.add(nieuwe_fiets)
@@ -136,38 +141,98 @@ def fiets_toevoegen():
 
     return redirect("/fietsen")
 
-# === Fiets bewerken ===
+
 @main.post("/fietsen/bewerken/<int:itemnr>")
 def fiets_bewerken(itemnr):
     fiets = Item.query.get_or_404(itemnr)
 
-    status = request.form["status"]
-    leeftijd_raw = request.form.get("leeftijd")
-    verantwoordelijke_id = request.form.get("verantwoordelijke_id") or None
+    fiets.merk = request.form["merk"]
+    fiets.model = request.form["model"]
+    fiets.status = StatusEnum[request.form["status"]]
 
-    fiets.status = StatusEnum[status]
+    leeftijd_raw = request.form.get("leeftijd")
     fiets.leeftijdscategorie = LeeftijdEnum[leeftijd_raw] if leeftijd_raw else None
-    fiets.verantwoordelijke_id = verantwoordelijke_id
 
     db.session.commit()
-
     return redirect("/fietsen")
 
 
-# ============================================
-# VERHUUR
-# ============================================
+
+
+# ---------------------- VERHUUR ----------------------
 @main.route("/verhuur")
 def verhuur():
-    betalingen = Betaling.query.all()
-    return render_template("verhuur.html", betalingen=betalingen)
+
+    verantwoordelijken = Verantwoordelijke.query.all()
+
+    klant_kind_data = {
+        v.verantwoordelijke_id: [
+            {"id": k.kind_id, "naam": k.naam, "leeftijd": k.leeftijd}
+            for k in v.kinderen
+        ]
+        for v in verantwoordelijken
+    }
+
+    return render_template(
+        "verhuur.html",
+        verhuur_lijst=Verhuur.query.order_by(Verhuur.startdatum.desc()).all(),
+        verantwoordelijken=verantwoordelijken,
+        beschikbare_fietsen=Item.query.filter(Item.status == StatusEnum.BESCHIKBAAR).all(),
+        klant_kind_data=klant_kind_data
+    )
 
 
-# ============================================
-# FINANCIEEL
-# ============================================
+
+@main.post("/verhuur/toevoegen")
+def verhuur_toevoegen():
+
+    start = datetime.strptime(request.form.get("startdatum"), "%Y-%m-%d").date()
+    einde = datetime.strptime(request.form.get("einddatum"), "%Y-%m-%d").date()
+
+    verh = Verhuur(
+        itemnr=request.form.get("itemnr", type=int),
+        kind_id=request.form.get("kind_id", type=int),
+        verantwoordelijke_id=request.form.get("verantwoordelijke_id", type=int),
+        startdatum=start,
+        einddatum=einde,
+        status=VerhuurStatusEnum.ACTIEF.value
+    )
+
+    db.session.add(verh)
+
+    fiets = Item.query.get(verh.itemnr)
+    if fiets:
+        fiets.status = StatusEnum.VERHUURD
+        fiets.verantwoordelijke_id = verh.verantwoordelijke_id
+
+    db.session.commit()
+    return redirect("/verhuur")
+
+
+
+@main.post("/verhuur/beëindigen/<int:verhuur_id>")
+def verhuur_beeindigen(verhuur_id):
+
+    verh = Verhuur.query.get_or_404(verhuur_id)
+    verh.status = VerhuurStatusEnum.BEEINDIGD.value
+
+    fiets = Item.query.get(verh.itemnr)
+    if fiets:
+        fiets.status = StatusEnum.BESCHIKBAAR
+        fiets.verantwoordelijke_id = None
+
+    db.session.commit()
+    return redirect("/verhuur")
+
+
+
+# ---------------------- FINANCIEEL ----------------------
 @main.route("/financieel")
 def financieel():
-    betalingen = Betaling.query.all()
-    return render_template("financieel.html", betalingen=betalingen)
+    return render_template("financieel.html", betalingen=Betaling.query.all())
+
+
+
+
+
 

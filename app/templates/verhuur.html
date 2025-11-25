@@ -1,31 +1,177 @@
-{% extends "index.html" %}
+{% extends 'index.html' %}
+{% set title = "Verhuur - Bike Lending Portaal" %}
 
 {% block main_content %}
+
 <h1>Verhuur</h1>
+<p class="count-text">Totaal verhuur: {{ verhuur_lijst|length }}</p>
+
+<button class="add-button" onclick="openVerhuurPopup()">➕ Nieuwe verhuur</button>
 
 <table>
-    <thead>
-        <tr>
-            <th>Item</th>
-            <th>Kind</th>
-            <th>Betalingswijze</th>
-            <th>Bedrag</th>
-            <th>Datum</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for betaling in betalingen %}
-        <tr>
-            <td>{{ betaling.item.itemnr }}</td>
-            <td>{{ betaling.kind.naam }}</td>
-
-            <!-- FIX: jouw model heet "betalingswijze", niet "betalingwijze" -->
-            <td>{{ betaling.betalingswijze.value }}</td>
-
-            <td>€{{ "%.2f"|format(betaling.bedrag) }}</td>
-            <td>{{ betaling.datum.strftime('%d-%m-%Y') }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+  <thead>
+    <tr>
+      <th>Verhuur ID</th>
+      <th>Fiets</th>
+      <th>Klant</th>
+      <th>Kind</th>
+      <th>Periode</th>
+      <th>Status</th>
+      <th>Actie</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for v in verhuur_lijst %}
+    <tr>
+      <td>{{ "%05d" % v.verhuur_id }}</td>
+      <td>
+        Fiets {{ v.itemnr }}
+        {% if v.item %} ({{ v.item.status.value }}) {% endif %}
+      </td>
+      <td>
+        {% if v.verantwoordelijke %}
+          {{ v.verantwoordelijke.voornaam }} {{ v.verantwoordelijke.achternaam }}
+        {% else %}-{% endif %}
+      </td>
+      <td>
+        {% if v.kind %}
+          {{ v.kind.naam }} ({{ v.kind.leeftijd }} jaar)
+        {% else %}-{% endif %}
+      </td>
+      <td>
+        {{ v.startdatum.strftime('%d-%m-%Y') }} – {{ v.einddatum.strftime('%d-%m-%Y') }}
+      </td>
+      <td>{{ v.status }}</td>
+      <td>
+        {% if v.status == 'actief' %}
+        <form method="POST" action="/verhuur/beëindigen/{{ v.verhuur_id }}" style="display:inline;">
+          <button type="submit" class="cancel-btn">Beëindig verhuur</button>
+        </form>
+        {% else %}-{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
+
 {% endblock %}
+
+{% block popup %}
+
+<div id="verhuur-popup" class="popup-overlay">
+  <form class="popup" method="POST" action="/verhuur/toevoegen">
+    
+    <h3>Nieuwe verhuur</h3>
+
+    <!-- Klant -->
+    <label>Klant:</label>
+    <select name="verantwoordelijke_id" id="klant-select" required>
+      <option value="">-- Kies een klant --</option>
+      {% for v in verantwoordelijken %}
+      <option value="{{ v.verantwoordelijke_id }}">
+        {{ "%05d" % v.verantwoordelijke_id }} - {{ v.voornaam }} {{ v.achternaam }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- Kind -->
+    <label>Kind:</label>
+    <div id="kind-container">
+      <p class="count-text">Kies eerst een klant.</p>
+    </div>
+
+    <!-- Fiets -->
+    <label>Fiets:</label>
+    <select name="itemnr" id="fiets-select" required>
+      <option value="">-- Kies een fiets --</option>
+      {% for f in beschikbare_fietsen %}
+      <option value="{{ f.itemnr }}">
+        {{ f.itemnr }} - {{ f.leeftijdscategorie.value if f.leeftijdscategorie else "geen categorie" }}
+        ({{ f.status.value }})
+      </option>
+      {% endfor %}
+    </select>
+
+    <!-- Periode -->
+    <label>Periode:</label>
+    <div style="display:flex; gap:8px;">
+      <div style="flex:1;">
+        <span class="count-text">Startdatum</span>
+        <input type="date" name="startdatum" required>
+      </div>
+      <div style="flex:1;">
+        <span class="count-text">Einddatum</span>
+        <input type="date" name="einddatum" required>
+      </div>
+    </div>
+
+    <div class="popup-buttons" style="margin-top:15px;">
+      <button type="button" class="cancel-btn" onclick="closeVerhuurPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+  </form>
+</div>
+
+<!-- 🔥 VEILIGE JSON INJECTIE -->
+<script id="klant-kind-data" type="application/json">
+  {{ klant_kind_data | tojson | safe }}
+</script>
+
+<script>
+  const KLANT_KIND_DATA = JSON.parse(
+    document.getElementById("klant-kind-data").textContent
+  );
+
+  function openVerhuurPopup() {
+    document.getElementById("verhuur-popup").style.display = "flex";
+  }
+
+  function closeVerhuurPopup() {
+    document.getElementById("verhuur-popup").style.display = "none";
+  }
+
+  function updateKindList() {
+    const klantId = document.getElementById("klant-select").value;
+    const container = document.getElementById("kind-container");
+    container.innerHTML = "";
+
+    if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
+      container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
+      return;
+    }
+
+    const list = document.createElement("div");
+
+    KLANT_KIND_DATA[klantId].forEach(child => {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.marginTop = "4px";
+
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "kind_id";
+      radio.value = child.id;
+      radio.required = true;
+
+      const label = document.createElement("label");
+      label.style.marginLeft = "6px";
+      label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
+
+      row.appendChild(radio);
+      row.appendChild(label);
+      list.appendChild(row);
+    });
+
+    container.appendChild(list);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("klant-select").addEventListener("change", updateKindList);
+  });
+</script>
+
+{% endblock %}
+
+
+

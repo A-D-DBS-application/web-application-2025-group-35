@@ -6,7 +6,7 @@
 <h1>Fietsen</h1>
 <p class="count-text">Aantal fietsen: {{ fietsen|length }}</p>
 
-<button class="add-button" onclick="openAddPopup()">Fiets toevoegen</button>
+<button class="add-button" onclick="openAddPopup()">➕ Fiets toevoegen</button>
 
 <div class="search-bar">
     <input type="text" id="search" placeholder="Zoek fiets..." onkeyup="filterFietsen()">
@@ -16,35 +16,31 @@
   <thead>
     <tr>
       <th>Itemnr</th>
+      <th>Merk</th>
+      <th>Model</th>
       <th>Status</th>
       <th>Leeftijdscategorie</th>
-      <th>Verantwoordelijke</th>
       <th>Bewerken</th>
     </tr>
   </thead>
   <tbody id="fietsen-body">
     {% for f in fietsen %}
     <tr>
-      <td>{{ f.itemnr }}</td>
+      <td>{{ "%05d" % f.itemnr }}</td>
+      <td>{{ f.merk }}</td>
+      <td>{{ f.model }}</td>
       <td>{{ f.status.value }}</td>
       <td>{{ f.leeftijdscategorie.value if f.leeftijdscategorie else "-" }}</td>
 
       <td>
-        {% if f.verantwoordelijke %}
-          {{ f.verantwoordelijke.voornaam }} {{ f.verantwoordelijke.achternaam }}
-        {% else %}
-          -
-        {% endif %}
-      </td>
-
-      <td>
         <button class="edit-btn"
           data-itemnr="{{ f.itemnr }}"
+          data-merk="{{ f.merk }}"
+          data-model="{{ f.model }}"
           data-status="{{ f.status.name }}"
           data-leeftijd="{{ f.leeftijdscategorie.name if f.leeftijdscategorie else '' }}"
-          data-verantwoordelijke="{{ f.verantwoordelijke_id or '' }}"
           onclick="openEditPopup(this)">
-          Bewerken
+          ✏️ Bewerken
         </button>
       </td>
     </tr>
@@ -55,6 +51,7 @@
 {% endblock %}
 
 
+
 {% block popup %}
 
 <!-- ================= ADD POPUP ================= -->
@@ -63,8 +60,11 @@
 
     <h3>Nieuwe fiets toevoegen</h3>
 
-    <label>Itemnummer:</label>
-    <input type="number" name="itemnr" required>
+    <label>Merk:</label>
+    <input type="text" name="merk" required>
+
+    <label>Model:</label>
+    <input type="text" name="model" required>
 
     <label>Status:</label>
     <select name="status" required>
@@ -78,16 +78,6 @@
       <option value="">(geen)</option>
       {% for l in LeeftijdEnum %}
       <option value="{{ l.name }}">{{ l.value }}</option>
-      {% endfor %}
-    </select>
-
-    <label>Verantwoordelijke:</label>
-    <select name="verantwoordelijke_id">
-      <option value="">(geen)</option>
-      {% for v in verantwoordelijken %}
-      <option value="{{ v.verantwoordelijke_id }}">
-        {{ v.voornaam }} {{ v.achternaam }}
-      </option>
       {% endfor %}
     </select>
 
@@ -106,6 +96,12 @@
 
     <h3>Fiets bewerken</h3>
 
+    <label>Merk:</label>
+    <input type="text" name="merk" id="edit-merk" required>
+
+    <label>Model:</label>
+    <input type="text" name="model" id="edit-model" required>
+
     <label>Status:</label>
     <select name="status" id="edit-status">
       {% for s in StatusEnum %}
@@ -118,16 +114,6 @@
       <option value="">(geen)</option>
       {% for l in LeeftijdEnum %}
       <option value="{{ l.name }}">{{ l.value }}</option>
-      {% endfor %}
-    </select>
-
-    <label>Verantwoordelijke:</label>
-    <select name="verantwoordelijke_id" id="edit-verantwoordelijke">
-      <option value="">(geen)</option>
-      {% for v in verantwoordelijken %}
-      <option value="{{ v.verantwoordelijke_id }}">
-        {{ v.voornaam }} {{ v.achternaam }}
-      </option>
       {% endfor %}
     </select>
 
@@ -144,9 +130,9 @@
 <script>
 function filterFietsen() {
   const q = document.getElementById("search").value.toLowerCase();
-  document.querySelectorAll("#fietsen-body tr").forEach(row => {
-    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none";
-  });
+  document.querySelectorAll("#fietsen-body tr").forEach(row =>
+    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none"
+  );
 }
 
 function openAddPopup() {
@@ -157,16 +143,14 @@ function closeAddPopup() {
 }
 
 function openEditPopup(btn) {
-  const itemnr = btn.dataset.itemnr;
-  const status = btn.dataset.status;
-  const leeftijd = btn.dataset.leeftijd;
-  const verantwoordelijke = btn.dataset.verantwoordelijke;
+  document.getElementById("edit-merk").value = btn.dataset.merk;
+  document.getElementById("edit-model").value = btn.dataset.model;
+  document.getElementById("edit-status").value = btn.dataset.status;
+  document.getElementById("edit-leeftijd").value = btn.dataset.leeftijd || "";
 
-  document.getElementById("edit-status").value = status;
-  document.getElementById("edit-leeftijd").value = leeftijd || "";
-  document.getElementById("edit-verantwoordelijke").value = verantwoordelijke || "";
+  document.getElementById("edit-form").action =
+    `/fietsen/bewerken/${btn.dataset.itemnr}`;
 
-  document.getElementById("edit-form").action = `/fietsen/bewerken/${itemnr}`;
   document.getElementById("edit-popup").style.display = "flex";
 }
 function closeEditPopup() {
@@ -176,6 +160,7 @@ function closeEditPopup() {
 {% endraw %}
 
 {% endblock %}
+
 
 
 
