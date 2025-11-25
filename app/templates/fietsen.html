@@ -1,100 +1,185 @@
-<!-- templates/fietsen.html -->
 {% extends 'index.html' %}
 {% set title = "Fietsen - Bike Lending Portaal" %}
 
 {% block main_content %}
 
-<div class="section-header">
-  <div>
-    <h1>Fietsen</h1>
-    <p class="count-text">Aantal fietsen: {{ fietsen|length }}</p>
-  </div>
-  <button class="add-button" onclick="openPopup()">Fiets toevoegen</button>
-</div>
+<h1>Fietsen</h1>
+<p class="count-text">Aantal fietsen: {{ fietsen|length }}</p>
+
+<button class="add-button" onclick="openAddPopup()">Fiets toevoegen</button>
 
 <div class="search-bar">
-  <input type="text" id="search" placeholder="Zoek fiets..." onkeyup="filterFietsen()">
+    <input type="text" id="search" placeholder="Zoek fiets..." onkeyup="filterFietsen()">
 </div>
 
 <table id="fietsen-table">
   <thead>
     <tr>
-      <th>Naam</th>
-      <th>Merk</th>
-      <th>Model</th>
+      <th>Itemnr</th>
       <th>Status</th>
+      <th>Leeftijdscategorie</th>
+      <th>Verantwoordelijke</th>
       <th>Bewerken</th>
     </tr>
   </thead>
   <tbody id="fietsen-body">
-
     {% for f in fietsen %}
     <tr>
-      <td>{{ f.naam }}</td>
-      <td>{{ f.merk }}</td>
-      <td>{{ f.model }}</td>
-      <td>{{ f.status }}</td>
-      <td><button class="edit-btn" onclick="editRow(this)">Bewerken</button></td>
+      <td>{{ f.itemnr }}</td>
+      <td>{{ f.status.value }}</td>
+      <td>{{ f.leeftijdscategorie.value if f.leeftijdscategorie else "-" }}</td>
+
+      <td>
+        {% if f.verantwoordelijke %}
+          {{ f.verantwoordelijke.voornaam }} {{ f.verantwoordelijke.achternaam }}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+
+      <td>
+        <button class="edit-btn"
+          data-itemnr="{{ f.itemnr }}"
+          data-status="{{ f.status.name }}"
+          data-leeftijd="{{ f.leeftijdscategorie.name if f.leeftijdscategorie else '' }}"
+          data-verantwoordelijke="{{ f.verantwoordelijke_id or '' }}"
+          onclick="openEditPopup(this)">
+          Bewerken
+        </button>
+      </td>
     </tr>
     {% endfor %}
-
   </tbody>
 </table>
 
 {% endblock %}
 
+
 {% block popup %}
-<h3 id="popup-title">Nieuwe Fiets Toevoegen</h3>
 
-<label>Naam:</label>
-<input type="text" id="input-naam">
+<!-- ================= ADD POPUP ================= -->
+<div id="add-popup" class="popup-overlay">
+  <form class="popup" method="POST" action="/fietsen/toevoegen">
 
-<label>Merk:</label>
-<input type="text" id="input-merk">
+    <h3>Nieuwe fiets toevoegen</h3>
 
-<label>Model:</label>
-<input type="text" id="input-model">
+    <label>Itemnummer:</label>
+    <input type="number" name="itemnr" required>
 
-<label>Status:</label>
-<input type="text" id="input-status" placeholder="Verhuurd / Op onderhoud / Niet beschikbaar">
+    <label>Status:</label>
+    <select name="status" required>
+      {% for s in StatusEnum %}
+      <option value="{{ s.name }}">{{ s.value }}</option>
+      {% endfor %}
+    </select>
 
-<div class="popup-buttons">
-  <button class="cancel-btn" onclick="closePopup()">Annuleren</button>
-  <button class="save-btn" onclick="saveFiets()">Opslaan</button>
+    <label>Leeftijdscategorie:</label>
+    <select name="leeftijd">
+      <option value="">(geen)</option>
+      {% for l in LeeftijdEnum %}
+      <option value="{{ l.name }}">{{ l.value }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Verantwoordelijke:</label>
+    <select name="verantwoordelijke_id">
+      <option value="">(geen)</option>
+      {% for v in verantwoordelijken %}
+      <option value="{{ v.verantwoordelijke_id }}">
+        {{ v.voornaam }} {{ v.achternaam }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeAddPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+
+  </form>
 </div>
 
+
+<!-- ================= EDIT POPUP ================= -->
+<div id="edit-popup" class="popup-overlay">
+  <form id="edit-form" class="popup" method="POST">
+
+    <h3>Fiets bewerken</h3>
+
+    <label>Status:</label>
+    <select name="status" id="edit-status">
+      {% for s in StatusEnum %}
+      <option value="{{ s.name }}">{{ s.value }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Leeftijdscategorie:</label>
+    <select name="leeftijd" id="edit-leeftijd">
+      <option value="">(geen)</option>
+      {% for l in LeeftijdEnum %}
+      <option value="{{ l.name }}">{{ l.value }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Verantwoordelijke:</label>
+    <select name="verantwoordelijke_id" id="edit-verantwoordelijke">
+      <option value="">(geen)</option>
+      {% for v in verantwoordelijken %}
+      <option value="{{ v.verantwoordelijke_id }}">
+        {{ v.voornaam }} {{ v.achternaam }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeEditPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+
+  </form>
+</div>
+
+
+{% raw %}
 <script>
-  function filterFietsen() {
-    const q = document.getElementById('search').value.toLowerCase();
-    document.querySelectorAll('#fietsen-body tr').forEach(row => {
-      row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
-    });
-  }
+function filterFietsen() {
+  const q = document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll("#fietsen-body tr").forEach(row => {
+    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none";
+  });
+}
 
-  function openPopup() {
-    document.getElementById('popup-title').innerText = "Nieuwe Fiets Toevoegen";
-    document.getElementById('popup-overlay').style.display = 'flex';
-  }
+function openAddPopup() {
+  document.getElementById("add-popup").style.display = "flex";
+}
+function closeAddPopup() {
+  document.getElementById("add-popup").style.display = "none";
+}
 
-  function closePopup() {
-    document.getElementById('popup-overlay').style.display = 'none';
-  }
+function openEditPopup(btn) {
+  const itemnr = btn.dataset.itemnr;
+  const status = btn.dataset.status;
+  const leeftijd = btn.dataset.leeftijd;
+  const verantwoordelijke = btn.dataset.verantwoordelijke;
 
-  function editRow(btn) {
-    const tr = btn.parentElement.parentElement;
-    const c = tr.getElementsByTagName('td');
+  document.getElementById("edit-status").value = status;
+  document.getElementById("edit-leeftijd").value = leeftijd || "";
+  document.getElementById("edit-verantwoordelijke").value = verantwoordelijke || "";
 
-    document.getElementById('input-naam').value = c[0].innerText;
-    document.getElementById('input-merk').value = c[1].innerText;
-    document.getElementById('input-model').value = c[2].innerText;
-    document.getElementById('input-status').value = c[3].innerText;
-
-    document.getElementById('popup-title').innerText = "Fiets Bewerken";
-    document.getElementById('popup-overlay').style.display = 'flex';
-  }
-
-  function saveFiets() {
-    alert("In backend verbinden met Supabase!");
-  }
+  document.getElementById("edit-form").action = `/fietsen/bewerken/${itemnr}`;
+  document.getElementById("edit-popup").style.display = "flex";
+}
+function closeEditPopup() {
+  document.getElementById("edit-popup").style.display = "none";
+}
 </script>
+{% endraw %}
+
 {% endblock %}
+
+
+
+
+
+
+

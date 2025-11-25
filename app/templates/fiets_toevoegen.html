@@ -1,0 +1,30 @@
+{% extends "index.html" %}
+
+{% block main_content %}
+<h1>Nieuwe Fiets Toevoegen</h1>
+
+<form action="/fietsen/toevoegen" method="POST">
+    <label>Itemnummer:</label>
+    <input type="number" name="itemnr" required>
+
+    <label>Status:</label>
+    <select name="status">
+        <option value="BESCHIKBAAR">Beschikbaar</option>
+        <option value="VERHUURD">Verhuurd</option>
+        <option value="ONDERHOUD">Onderhoud</option>
+    </select>
+
+    <label>Leeftijdscategorie:</label>
+    <select name="leeftijdscategorie">
+        <option value="LOOPFIESTEN">1–4 jaar</option>
+        <option value="PEUTER">2–3 jaar</option>
+        <option value="KLEUTER">4–6 jaar</option>
+        <option value="JUNIOR">6–8 jaar</option>
+        <option value="KIDS">8–12 jaar</option>
+        <option value="TEEN">14–16 jaar</option>
+        <option value="OUDER_DAN_16">Ouder dan 16 jaar</option>
+    </select>
+
+    <button type="submit">Opslaan</button>
+</form>
+{% endblock %}

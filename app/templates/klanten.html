@@ -1,126 +1,236 @@
-<!-- templates/klanten.html -->
 {% extends 'index.html' %}
 {% set title = "Klanten - Bike Lending Portaal" %}
 
 {% block main_content %}
 
-<div class="section-header">
-  <div>
-    <h1>Klanten</h1>
-    <p class="count-text">Aantal klanten: {{ klanten|length }}</p>
-  </div>
-  <button class="add-button" onclick="openPopup()">Klant toevoegen</button>
-</div>
+<h1>Klanten</h1>
+<p class="count-text">Aantal klanten: {{ verantwoordelijken|length }}</p>
+
+<button class="add-button" onclick="openAddPopup()">Klant toevoegen</button>
 
 <div class="search-bar">
-  <input type="text" id="search" placeholder="Zoek klant..." onkeyup="filterClients()">
+    <input type="text" id="search" placeholder="Zoek klant..." onkeyup="filterKlanten()">
 </div>
 
 <table id="klanten-table">
   <thead>
     <tr>
-      <th>Klant</th>
-      <th>Contact</th>
+      <th>Klant ID</th>
+      <th>Voornaam</th>
+      <th>Achternaam</th>
+      <th>Email</th>
       <th>Adres</th>
       <th>Kinderen</th>
       <th>Bewerken</th>
     </tr>
   </thead>
   <tbody id="klanten-body">
-
-    {% for k in klanten %}
+    {% for v in verantwoordelijken %}
     <tr>
-      <td>{{ k.voornaam }} {{ k.achternaam }}</td>
-
+      <td>{{ "%05d" % v.verantwoordelijke_id }}</td>
+      <td>{{ v.voornaam }}</td>
+      <td>{{ v.achternaam }}</td>
+      <td>{{ v.email }}</td>
+      <td>{{ v.adres.straat }} {{ v.adres.huisnummer }}, {{ v.adres.gemeente }}</td>
       <td>
-        {{ k.email }}<br>
-        {{ k.telefoon }}
+        {% if v.kinderen %}
+          <ul style="margin:0; padding-left:18px;">
+            {% for k in v.kinderen %}
+              <li>{{ k.naam }} ({{ k.leeftijd }} jaar)</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          -
+        {% endif %}
       </td>
-
       <td>
-        {{ k.adres.straat }} {{ k.adres.huisnummer }},
-        {{ k.adres.gemeente }},
-        {{ k.adres.land }}
+        <button
+          class="edit-btn"
+          data-id="{{ v.verantwoordelijke_id }}"
+          data-voornaam="{{ v.voornaam }}"
+          data-achternaam="{{ v.achternaam }}"
+          data-email="{{ v.email }}"
+          data-kind-namen="{{ v.kinderen|map(attribute='naam')|join('||') }}"
+          data-kind-datums="{{ v.kinderen|map(attribute='geboortedatum')|join('||') }}"
+          onclick="openEditPopup(this)"
+        >
+          Bewerken
+        </button>
       </td>
-
-      <td>
-        {% for kind in k.kinderen %}
-          {{ kind.naam }} ({{ kind.geboortedatum.year }}){% if not loop.last %}, {% endif %}
-        {% endfor %}
-      </td>
-
-      <td><button class="edit-btn" onclick="editRow(this)">Bewerken</button></td>
     </tr>
     {% endfor %}
-
   </tbody>
 </table>
 
 {% endblock %}
 
 {% block popup %}
-<h3 id="popup-title">Nieuwe Klant Toevoegen</h3>
 
-<label>Voornaam:</label>
-<input type="text" id="input-voornaam">
+<!-- KLANT TOEVOEGEN -->
+<div id="add-popup" class="popup-overlay">
+  <form class="popup" method="POST" action="/klanten/toevoegen">
 
-<label>Achternaam:</label>
-<input type="text" id="input-achternaam">
+    <h3>Nieuwe klant toevoegen</h3>
 
-<label>Email:</label>
-<input type="email" id="input-email">
+    <label>Voornaam:</label>
+    <input type="text" name="voornaam" required>
 
-<label>Telefoon:</label>
-<input type="text" id="input-telefoon">
+    <label>Achternaam:</label>
+    <input type="text" name="achternaam" required>
 
-<label>Adres (volledig):</label>
-<input type="text" id="input-adres">
+    <label>Email:</label>
+    <input type="email" name="email" required>
 
-<label>Kinderen (komma gescheiden):</label>
-<input type="text" id="input-kinderen">
+    <label>Straat:</label>
+    <input type="text" name="straat" required>
 
-<div class="popup-buttons">
-  <button class="cancel-btn" onclick="closePopup()">Annuleren</button>
-  <button class="save-btn" onclick="saveKlant()">Opslaan</button>
+    <label>Huisnummer:</label>
+    <input type="text" name="huisnummer" required>
+
+    <label>Postcode:</label>
+    <input type="number" name="postcode" required>
+
+    <label>Gemeente:</label>
+    <input type="text" name="gemeente" required>
+
+    <label>Land:</label>
+    <input type="text" name="land" required>
+
+    <hr>
+
+    <label>Kind(eren):</label>
+    <div id="add-children-container"></div>
+
+    <button type="button" class="add-button" onclick="addChildRow('add-children-container')">
+      Kind toevoegen
+    </button>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeAddPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- KLANT BEWERKEN -->
+<div id="edit-popup" class="popup-overlay">
+  <form id="edit-form" class="popup" method="POST">
+
+    <h3>Klant bewerken</h3>
+
+    <label>Voornaam:</label>
+    <input type="text" name="voornaam" id="edit-voornaam" required>
+
+    <label>Achternaam:</label>
+    <input type="text" name="achternaam" id="edit-achternaam" required>
+
+    <label>Email:</label>
+    <input type="email" name="email" id="edit-email" required>
+
+    <hr>
+
+    <label>Kinderen:</label>
+    <div id="edit-children-container"></div>
+
+    <button type="button" class="add-button" onclick="addChildRow('edit-children-container')">
+      Kind toevoegen
+    </button>
+
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeEditPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+
+  </form>
 </div>
 
 <script>
-  function filterClients() {
-    const query = document.getElementById('search').value.toLowerCase();
-    document.querySelectorAll('#klanten-body tr').forEach(row => {
-      row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
-    });
+function filterKlanten() {
+  const q = document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll("#klanten-body tr").forEach(row => {
+    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+function addChildRow(containerId, naam = "", datum = "") {
+  const container = document.getElementById(containerId);
+
+  const row = document.createElement("div");
+  row.className = "child-row";
+  row.style.display = "flex";
+  row.style.marginTop = "6px";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.name = "kind_namen[]";
+  nameInput.placeholder = "Naam";
+  nameInput.value = naam;
+  nameInput.required = true;
+  nameInput.style.flex = "1";
+
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.name = "kind_datums[]";
+  dateInput.value = datum || "";
+  dateInput.required = true;
+  dateInput.style.marginLeft = "6px";
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.textContent = "✖";
+  removeBtn.className = "cancel-btn";
+  removeBtn.style.marginLeft = "6px";
+  removeBtn.onclick = () => row.remove();
+
+  row.appendChild(nameInput);
+  row.appendChild(dateInput);
+  row.appendChild(removeBtn);
+
+  container.appendChild(row);
+}
+
+function openAddPopup() {
+  const container = document.getElementById("add-children-container");
+  container.innerHTML = "";
+  addChildRow("add-children-container");
+
+  document.getElementById("add-popup").style.display = "flex";
+}
+function closeAddPopup() {
+  document.getElementById("add-popup").style.display = "none";
+}
+
+function openEditPopup(btn) {
+  const container = document.getElementById("edit-children-container");
+  container.innerHTML = "";
+
+  const id = btn.dataset.id;
+  const namen = (btn.dataset.kindNamen || "").split("||");
+  const datums = (btn.dataset.kindDatums || "").split("||");
+
+  document.getElementById("edit-voornaam").value = btn.dataset.voornaam;
+  document.getElementById("edit-achternaam").value = btn.dataset.achternaam;
+  document.getElementById("edit-email").value = btn.dataset.email;
+
+  if (namen.length === 1 && namen[0] === "") {
+    addChildRow("edit-children-container");
+  } else {
+    namen.forEach((naam, idx) => addChildRow("edit-children-container", naam, datums[idx]));
   }
 
-  function openPopup() {
-    document.getElementById('popup-title').innerText = "Nieuwe Klant Toevoegen";
-    document.getElementById('popup-overlay').style.display = 'flex';
-  }
-
-  function closePopup() {
-    document.getElementById('popup-overlay').style.display = 'none';
-  }
-
-  function editRow(btn) {
-    const tr = btn.parentElement.parentElement;
-    const cells = tr.getElementsByTagName('td');
-
-    const fullName = cells[0].innerText.split(" ");
-    document.getElementById('input-voornaam').value = fullName[0];
-    document.getElementById('input-achternaam').value = fullName.slice(1).join(" ");
-
-    document.getElementById('input-email').value = cells[1].innerText.split("\n")[0];
-    document.getElementById('input-telefoon').value = cells[1].innerText.split("\n")[1];
-
-    document.getElementById('input-adres').value = cells[2].innerText;
-    document.getElementById('input-kinderen').value = cells[3].innerText;
-
-    document.getElementById('popup-title').innerText = "Klant Bewerken";
-    document.getElementById('popup-overlay').style.display = 'flex';
-  }
-
-  function saveKlant() {
-    alert("In backend verbinden met Supabase!");
-  }
+  document.getElementById("edit-form").action = `/klanten/bewerken/${id}`;
+  document.getElementById("edit-popup").style.display = "flex";
+}
+function closeEditPopup() {
+  document.getElementById("edit-popup").style.display = "none";
+}
 </script>
+
 {% endblock %}
+
+
+
+
+
+
