@@ -14,6 +14,7 @@ from .models import (
     VerhuurStatusEnum,
     BetalingswijzeEnum  
 )
+from.algorithm import *
 
 
 main = Blueprint("main", __name__)
@@ -175,7 +176,25 @@ def fiets_bewerken(itemnr):
     db.session.commit()
     return redirect("/fietsen")
 
+#algoritme toevoegen
+@main.get("/api/fietsen-advies/<int:kind_id>")
+def api_fietsen_advies(kind_id):
+    kind = Kind.query.get_or_404(kind_id)
 
+    # ⬇️ jouw eigen algoritme wordt hier gebruikt!
+    fietsen = fietsen_voor_leeftijd(kind)
+
+    # ⬇️ fietsen_voor_leeftijd() geeft tuples → (score, fiets)
+    result = []
+    for score, f in fietsen:
+        result.append({
+            "itemnr": f.itemnr,
+            "omschrijving": f"{f.itemnr} – {f.merk} {f.model}",
+            "score": score
+        })
+
+    return result
+#hier eindigt het
 
 
 @main.route("/verhuur")

@@ -111,13 +111,9 @@
     <!-- Fiets -->
     <label>Fiets:</label>
     <select name="itemnr" id="fiets-select" required>
-      <option value="">-- Kies een fiets --</option>
-      {% for f in beschikbare_fietsen %}
-      <option value="{{ f.itemnr }}">
-        {{ "%05d" % f.itemnr }} – {{ f.merk }} {{ f.model }} ({{ f.status.value }})
-      </option>
-      {% endfor %}
+        <option value="">-- Kies eerst een kind --</option>
     </select>
+      
 
     <!-- Periode -->
     <label>Periode:</label>
@@ -237,10 +233,62 @@
     document.getElementById("klant-popup").style.display = "none";
   }
 
+  // 🔹 Fietsenadvies ophalen en dropdown invullen
+  async function laadFietsAdvies(kindId) {
+    const fietsSelect = document.getElementById("fiets-select");
+    if (!fietsSelect) return;
+
+    // basisoptie
+    fietsSelect.innerHTML = '<option value="">-- Kies een fiets --</option>';
+
+    if (!kindId) return;
+
+    try {
+      const response = await fetch(`/api/fietsen-advies/${kindId}`);
+      if (!response.ok) {
+        console.error("Kon fietsenadvies niet ophalen:", response.status);
+        return;
+      }
+
+      const data = await response.json();
+
+      // sorteer op score (beste eerst)
+      data.sort((a, b) => b.score - a.score);
+
+      data.forEach(f => {
+        const option = document.createElement("option");
+
+        // itemnr naar 5 cijfers
+        const nummer = String(f.itemnr).padStart(5, "0");
+        const label = `${nummer} – ${f.omschrijving}`;
+
+        const extra =
+          f.score === 2 ? " ⭐ voorgesteld" :
+          f.score === 1 ? " (kan ook)" :
+          "";
+
+        option.value = f.itemnr;
+        option.textContent = label + extra;
+
+        fietsSelect.appendChild(option);
+      });
+
+    } catch (err) {
+      console.error("Fout bij ophalen advies:", err);
+    }
+  }
+
   function updateKindList() {
     const klantId = document.getElementById("klant-select").value;
     const container = document.getElementById("kind-container");
+    const fietsSelect = document.getElementById("fiets-select");
+
     container.innerHTML = "";
+
+    // reset fietsenlijst zodra klant verandert
+    if (fietsSelect) {
+      fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
+    }
 
     if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
       container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
@@ -264,6 +312,11 @@
       const label = document.createElement("label");
       label.style.marginLeft = "6px";
       label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
+
+      // 🔹 wanneer dit kind gekozen wordt → fietsenadvies laden
+      radio.addEventListener("change", () => {
+        laadFietsAdvies(child.id);
+      });
 
       row.appendChild(radio);
       row.appendChild(label);
@@ -332,8 +385,3 @@
 </style>
 
 {% endblock %}
-
-
-
-
-
