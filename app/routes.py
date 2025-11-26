@@ -13,7 +13,7 @@ from .models import (
     StatusEnum,
     LeeftijdEnum,
     VerhuurStatusEnum,
-    BetalingswijzeEnum  
+    BetalingswijzeEnum
 )
 from .algorithm import *
 
@@ -124,11 +124,8 @@ def klant_bewerken(id):
         klant.adres.gemeente = request.form.get("gemeente")
         klant.adres.land = request.form.get("land")
 
-    # --- KINDEREN ---  
-    # Bestaande kinderen ophalen
+    # --- KINDEREN ---
     bestaande_kinderen = {k.kind_id: k for k in klant.kinderen}
-
-    # Nieuwe kinderen uit formulier
     nieuwe_namen = request.form.getlist("kind_namen[]")
     nieuwe_datums = request.form.getlist("kind_datums[]")
 
@@ -137,26 +134,18 @@ def klant_bewerken(id):
         if naam.strip():
             nieuwe_kinderen.append((naam, datum))
 
-    # Setjes maken voor vergelijking
     bestaand_set = {(k.naam, k.geboortedatum.isoformat()) for k in bestaande_kinderen.values()}
     nieuw_set = set(nieuwe_kinderen)
 
-    # Welke moeten weg?
     te_verwijderen = bestaand_set - nieuw_set
-
-    # Welke moeten erbij?
     toe_te_voegen = nieuw_set - bestaand_set
 
-    # VERWIJDEREN (alleen als er GEEN betalingen of verhuur zijn)
     for naam, datum in te_verwijderen:
         kind = next(k for k in bestaande_kinderen.values()
                     if k.naam == naam and k.geboortedatum.isoformat() == datum)
-
         if not kind.betalingen and not getattr(kind, 'verhuren', []):
             db.session.delete(kind)
-        # anders NIET verwijderen → voorkomt foreign key fouten
 
-    # TOEVOEGEN
     for naam, datum in toe_te_voegen:
         nieuw_kind = Kind(
             naam=naam,
@@ -164,8 +153,6 @@ def klant_bewerken(id):
             verantwoordelijke_id=id
         )
         db.session.add(nieuw_kind)
-
-
 
     db.session.commit()
     return redirect("/klanten")
@@ -207,21 +194,14 @@ def fiets_toevoegen():
 @rol_required(["depotmedewerker", "financieel"])
 def fiets_bewerken(itemnr):
     fiets = Item.query.get_or_404(itemnr)
-
-    # Gewenste status uit het formulier
     gekozen_status = StatusEnum[request.form["status"]]
 
-    # 1️⃣ Verbied dat een fiets met de hand op "uitgeleend" gezet wordt
     if gekozen_status == StatusEnum.VERHUURD:
-        # Negeer statuswijziging → enkel verhuur mag dat doen
         gekozen_status = fiets.status
 
-    # 2️⃣ Update enkel status als fiets NIET verhuurd is
-    # (anders moet beëindiging via verhuur gebeuren)
     if fiets.status != StatusEnum.VERHUURD:
         fiets.status = gekozen_status
 
-    # Merk/model en leeftijdscategorie mogen altijd aangepast worden
     fiets.merk = request.form["merk"]
     fiets.model = request.form["model"]
 
@@ -232,8 +212,6 @@ def fiets_bewerken(itemnr):
 
     db.session.commit()
     return redirect("/fietsen")
-
-
 
 # ---------------------- ALGORITHME ----------------------
 @main.get("/api/fietsen-advies/<int:kind_id>")
@@ -296,7 +274,6 @@ def verhuur_beeindigen(verhuur_id):
 @main.route("/financieel")
 @rol_required(["financieel"])
 def financieel():
-    from .models import Betaling, BetalingswijzeEnum, Item
     verantwoordelijken = Verantwoordelijke.query.all()
     klant_kind_data = {v.verantwoordelijke_id: [{"id": k.kind_id, "naam": k.naam, "leeftijd": k.leeftijd, "geboortedatum": k.geboortedatum.isoformat()} for k in v.kinderen] for v in verantwoordelijken}
     return render_template(
@@ -312,8 +289,8 @@ def financieel():
 @rol_required(["financieel"])
 def betaling_toevoegen():
     betaling = Betaling(
-        itemnr=request.form.get("itemnr"),
-        kind_id=request.form.get("kind_id"),
+        itemnr=request.form.get("itemnr", type=int),
+        kind_id=request.form.get("kind_id", type=int),
         betalingswijze=BetalingswijzeEnum[request.form.get("betalingswijze")],
         bedrag=float(request.form.get("bedrag")),
         datum=datetime.strptime(request.form.get("datum"), "%Y-%m-%d").date(),
@@ -321,4 +298,19 @@ def betaling_toevoegen():
     )
     db.session.add(betaling)
     db.session.commit()
+    flash("Betaling toegevoegd.", "success")
+    return redirect("/financieel")
+
+@main.post("/financieel/bewerken/<int:betaling_id>")
+@rol_required(["financieel"])
+def betaling_bewerken(betaling_id):
+    betaling = Betaling.query.get_or_404(betaling_id)
+    betaling.itemnr = request.form.get("itemnr", type=int)
+    betaling.kind_id = request.form.get("kind_id", type=int)
+    betaling.betalingswijze = BetalingswijzeEnum[request.form.get("betalingswijze")]
+    betaling.bedrag = float(request.form.get("bedrag"))
+    betaling.datum = datetime.strptime(request.form.get("datum"), "%Y-%m-%d").date()
+    betaling.tijd = datetime.now().time()
+    db.session.commit()
+    flash(f"Betaling {betaling_id} aangepast.", "success")
     return redirect("/financieel")
