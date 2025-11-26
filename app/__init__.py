@@ -9,6 +9,9 @@ def create_app():
 
     app.config.from_object(Config) #Laadt alle configuratievariabelen uit de Config-klasse in de Flask-app.
 
+    # Voeg secret key toe voor sessies
+    app.secret_key = "123fiets"
+
     db.init_app(app) #koppel SQLalchemy database aan flask app
 
     

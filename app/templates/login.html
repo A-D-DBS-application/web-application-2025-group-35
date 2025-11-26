@@ -1,0 +1,14 @@
+{% extends 'index.html' %}
+
+{% block main_content %}
+<h2>Login</h2>
+<form method="post" action="/login">
+    <label for="rol">Kies uw rol:</label>
+    <select name="rol" id="rol" required>
+        <option value="">-- Kies --</option>
+        <option value="depotmedewerker">Depotmedewerker</option>
+        <option value="financieel">Financieel medewerker</option>
+    </select>
+    <button type="submit">Login</button>
+</form>
+{% endblock %}

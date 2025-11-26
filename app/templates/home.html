@@ -2,6 +2,15 @@
 
 {% block main_content %}
 <h1>Welkom bij het Bike Lending Portaal</h1>
+
+{% if session.get('rol') %}
+    <p>Je bent ingelogd als: {{ session.get('rol') }}</p>
+    <a href="/logout">Uitloggen</a>
+{% else %}
+    <p><a href="/login">Login</a> om verder te gaan</p>
+{% endif %}
+
 <p>Selecteer een onderdeel uit het menu links.</p>
 {% endblock %}
+
 
