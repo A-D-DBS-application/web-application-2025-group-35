@@ -207,13 +207,33 @@ def fiets_toevoegen():
 @rol_required(["depotmedewerker", "financieel"])
 def fiets_bewerken(itemnr):
     fiets = Item.query.get_or_404(itemnr)
+
+    # Gewenste status uit het formulier
+    gekozen_status = StatusEnum[request.form["status"]]
+
+    # 1️⃣ Verbied dat een fiets met de hand op "uitgeleend" gezet wordt
+    if gekozen_status == StatusEnum.VERHUURD:
+        # Negeer statuswijziging → enkel verhuur mag dat doen
+        gekozen_status = fiets.status
+
+    # 2️⃣ Update enkel status als fiets NIET verhuurd is
+    # (anders moet beëindiging via verhuur gebeuren)
+    if fiets.status != StatusEnum.VERHUURD:
+        fiets.status = gekozen_status
+
+    # Merk/model en leeftijdscategorie mogen altijd aangepast worden
     fiets.merk = request.form["merk"]
     fiets.model = request.form["model"]
-    fiets.status = StatusEnum[request.form["status"]]
+
     leeftijd_raw = request.form.get("leeftijd")
-    fiets.leeftijdscategorie = LeeftijdEnum[leeftijd_raw] if leeftijd_raw else None
+    fiets.leeftijdscategorie = (
+        LeeftijdEnum[leeftijd_raw] if leeftijd_raw else None
+    )
+
     db.session.commit()
     return redirect("/fietsen")
+
+
 
 # ---------------------- ALGORITHME ----------------------
 @main.get("/api/fietsen-advies/<int:kind_id>")
