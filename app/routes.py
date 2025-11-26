@@ -124,18 +124,48 @@ def klant_bewerken(id):
         klant.adres.gemeente = request.form.get("gemeente")
         klant.adres.land = request.form.get("land")
 
-    Kind.query.filter_by(verantwoordelijke_id=id).delete()
+    # --- KINDEREN ---  
+    # Bestaande kinderen ophalen
+    bestaande_kinderen = {k.kind_id: k for k in klant.kinderen}
 
-    for naam, datum in zip(
-        request.form.getlist("kind_namen[]"),
-        request.form.getlist("kind_datums[]")
-    ):
+    # Nieuwe kinderen uit formulier
+    nieuwe_namen = request.form.getlist("kind_namen[]")
+    nieuwe_datums = request.form.getlist("kind_datums[]")
+
+    nieuwe_kinderen = []
+    for naam, datum in zip(nieuwe_namen, nieuwe_datums):
         if naam.strip():
-            db.session.add(Kind(
-                naam=naam,
-                geboortedatum=datum,
-                verantwoordelijke_id=id
-            ))
+            nieuwe_kinderen.append((naam, datum))
+
+    # Setjes maken voor vergelijking
+    bestaand_set = {(k.naam, k.geboortedatum.isoformat()) for k in bestaande_kinderen.values()}
+    nieuw_set = set(nieuwe_kinderen)
+
+    # Welke moeten weg?
+    te_verwijderen = bestaand_set - nieuw_set
+
+    # Welke moeten erbij?
+    toe_te_voegen = nieuw_set - bestaand_set
+
+    # VERWIJDEREN (alleen als er GEEN betalingen of verhuur zijn)
+    for naam, datum in te_verwijderen:
+        kind = next(k for k in bestaande_kinderen.values()
+                    if k.naam == naam and k.geboortedatum.isoformat() == datum)
+
+        if not kind.betalingen and not getattr(kind, 'verhuren', []):
+            db.session.delete(kind)
+        # anders NIET verwijderen → voorkomt foreign key fouten
+
+    # TOEVOEGEN
+    for naam, datum in toe_te_voegen:
+        nieuw_kind = Kind(
+            naam=naam,
+            geboortedatum=datum,
+            verantwoordelijke_id=id
+        )
+        db.session.add(nieuw_kind)
+
+
 
     db.session.commit()
     return redirect("/klanten")
