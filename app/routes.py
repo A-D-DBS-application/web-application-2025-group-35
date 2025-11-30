@@ -278,7 +278,7 @@ def financieel():
     klant_kind_data = {v.verantwoordelijke_id: [{"id": k.kind_id, "naam": k.naam, "leeftijd": k.leeftijd, "geboortedatum": k.geboortedatum.isoformat()} for k in v.kinderen] for v in verantwoordelijken}
     return render_template(
         "financieel.html",
-        betalingen=Betaling.query.all(),
+        betalingen=Betaling.query.order_by(Betaling.datum.desc()).all(),
         fietsen=Item.query.all(),
         verantwoordelijken=verantwoordelijken,
         klant_kind_data=klant_kind_data,
