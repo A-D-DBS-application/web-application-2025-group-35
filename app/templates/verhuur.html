@@ -62,7 +62,9 @@
         {{ v.startdatum.strftime('%d-%m-%Y') }} – {{ v.einddatum.strftime('%d-%m-%Y') }}
       </td>
       <td>
-        {{ v.status.value }}
+          <span class="status {{ v.status.name | lower }}">
+            {{ v.status.value }}
+           </span>
       </td>
       <td>
         {% if v.status == VerhuurStatusEnum.ACTIEF %}
@@ -382,6 +384,21 @@
     cursor: pointer;
     font: inherit;
   }
+  .status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+}
+
+.status.actief {
+  background-color: #16a34a; /* groen */
+}
+
+.status.beëindigd,
+.status.beeindigd {
+  background-color: #dc2626; /* rood */
+}
 </style>
 
 {% endblock %}
