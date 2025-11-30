@@ -227,14 +227,35 @@ def api_fietsen_advies(kind_id):
 @rol_required(["depotmedewerker", "financieel"])
 def verhuur():
     verantwoordelijken = Verantwoordelijke.query.all()
-    klant_kind_data = {v.verantwoordelijke_id: [{"id": k.kind_id, "naam": k.naam, "leeftijd": k.leeftijd, "geboortedatum": k.geboortedatum.isoformat()} for k in v.kinderen] for v in verantwoordelijken}
+
+    klant_kind_data = {
+        v.verantwoordelijke_id: [
+            {
+                "id": k.kind_id,
+                "naam": k.naam,
+                "leeftijd": k.leeftijd,
+                "geboortedatum": k.geboortedatum.isoformat(),
+            }
+            for k in v.kinderen
+        ]
+        for v in verantwoordelijken
+    }
+
+    # aantal actieve verhuren tellen
+    actieve_verhuur = Verhuur.query.filter_by(
+        status=VerhuurStatusEnum.ACTIEF.value
+    ).count()
+
     return render_template(
         "verhuur.html",
         verhuur_lijst=Verhuur.query.order_by(Verhuur.startdatum.desc()).all(),
+        totaal_actief=actieve_verhuur,
         verantwoordelijken=verantwoordelijken,
-        beschikbare_fietsen=Item.query.filter(Item.status == StatusEnum.BESCHIKBAAR).all(),
+        beschikbare_fietsen=Item.query.filter(
+            Item.status == StatusEnum.BESCHIKBAAR
+        ).all(),
         klant_kind_data=klant_kind_data,
-        VerhuurStatusEnum=VerhuurStatusEnum
+        VerhuurStatusEnum=VerhuurStatusEnum,
     )
 
 @main.post("/verhuur/toevoegen")
