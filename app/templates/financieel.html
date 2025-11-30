@@ -65,7 +65,11 @@
       </td>
 
       <td>{{ "%.2f"|format(b.bedrag) }}</td>
-      <td>{{ b.betalingswijze.value }}</td>
+      <td>
+          <span class="betaling-status {{ b.betalingswijze.name | lower }}">
+           {{ b.betalingswijze.value }}
+          </span>
+      </td>
       <td>{{ b.datum.strftime('%d-%m-%Y') }}</td>
 
       <!-- BEWERKEN -->
@@ -352,6 +356,31 @@ function addChildRow(containerId, naam = "", datum = "") {
   text-decoration: underline;
   cursor: pointer;
   font: inherit;
+}
+.betaling-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+}
+
+.betaling-status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+}
+
+/* Groen voor voldaan */
+.betaling-status.contant,
+.betaling-status.kaart,
+.betaling-status.overschrijven_voldaan {
+  background-color: #16a34a;
+}
+
+/* Rood voor niet voldaan */
+.betaling-status.overschrijven_niet_voldaan {
+  background-color: #dc2626;
 }
 </style>
 
