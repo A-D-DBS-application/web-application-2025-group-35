@@ -76,7 +76,7 @@
         </form>
 
         <button class="add-button verleng-btn"
-                onclick="openVerlengPopup({{ v.verhuur_id }}, '{{ v.einddatum.strftime('%Y-%m-%d') }}')">
+                onclick="openVerlengPopup({{ v.verhuur_id }}, '{{ v.einddatum.strftime('%d-%m-%Y') }}')">
           Verleng verhuur
         </button>
         {% else %}
@@ -206,31 +206,25 @@
   </form>
 </div>
 
-<!-- JSON met klant-kind data -->
 <script id="klant-kind-data" type="application/json">
   {{ klant_kind_data | tojson | safe }}
 </script>
 
 <script>
-  const KLANT_KIND_DATA = JSON.parse(
-    document.getElementById("klant-kind-data").textContent
-  );
+  const KLANT_KIND_DATA = JSON.parse(document.getElementById("klant-kind-data").textContent);
 
   function openVerhuurPopup() {
     document.getElementById("verhuur-popup").style.display = "flex";
   }
-
   function closeVerhuurPopup() {
     document.getElementById("verhuur-popup").style.display = "none";
   }
 
   function openKlantPopup(btn) {
     const id = btn.dataset.id;
-
     document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
     document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
     document.getElementById("klant-email").value = btn.dataset.email;
-
     document.getElementById("klant-straat").value = btn.dataset.straat;
     document.getElementById("klant-huisnummer").value = btn.dataset.huisnummer;
     document.getElementById("klant-postcode").value = btn.dataset.postcode;
@@ -241,139 +235,32 @@
     container.innerHTML = "";
 
     const kinderen = KLANT_KIND_DATA[id] || [];
-    if (kinderen.length === 0) {
-      addChildRow("klant-children-container");
-    } else {
-      kinderen.forEach(k =>
-        addChildRow("klant-children-container", k.naam, k.geboortedatum || "")
-      );
-    }
+    if (kinderen.length === 0) addChildRow("klant-children-container");
+    else kinderen.forEach(k => addChildRow("klant-children-container", k.naam, k.geboortedatum || ""));
 
     document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
     document.getElementById("klant-popup").style.display = "flex";
   }
-
-  function closeKlantPopup() {
-    document.getElementById("klant-popup").style.display = "none";
-  }
-
-  async function laadFietsAdvies(kindId) {
-    const fietsSelect = document.getElementById("fiets-select");
-    if (!fietsSelect) return;
-
-    fietsSelect.innerHTML = '<option value="">-- Kies een fiets --</option>';
-
-    if (!kindId) return;
-
-    try {
-      const response = await fetch(`/api/fietsen-advies/${kindId}`);
-      const data = await response.json();
-      data.sort((a, b) => b.score - a.score);
-
-      data.forEach(f => {
-        const opt = document.createElement("option");
-        const nummer = String(f.itemnr).padStart(5, "0");
-        const extra = f.score === 2 ? " ⭐ voorgesteld" :
-                      f.score === 1 ? " (alternatief)" : "";
-        opt.value = f.itemnr;
-        opt.textContent = `${nummer} – ${f.omschrijving}${extra}`;
-        fietsSelect.appendChild(opt);
-      });
-    } catch (err) {
-      console.error("Fout bij ophalen advies:", err);
-    }
-  }
-
-  function updateKindList() {
-    const klantId = document.getElementById("klant-select").value;
-    const container = document.getElementById("kind-container");
-    const fietsSelect = document.getElementById("fiets-select");
-
-    container.innerHTML = "";
-    fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
-
-    if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
-      container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
-      return;
-    }
-
-    const list = document.createElement("div");
-
-    KLANT_KIND_DATA[klantId].forEach(child => {
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.marginTop = "4px";
-
-      const radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "kind_id";
-      radio.value = child.id;
-      radio.required = true;
-
-      radio.addEventListener("change", () => {
-        laadFietsAdvies(child.id);
-      });
-
-      const label = document.createElement("label");
-      label.style.marginLeft = "6px";
-      label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
-
-      row.appendChild(radio);
-      row.appendChild(label);
-      list.appendChild(row);
-
-      const info = document.createElement("div");
-      info.style.marginLeft = "26px";
-      info.style.fontSize = "0.85em";
-      info.style.color = "#b91c1c";
-
-      fetch(`/api/kind/${child.id}/lopende_verhuur`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.aantal > 0) info.textContent = `${d.aantal} lopende verhuur`;
-        });
-
-      list.appendChild(info);
-    });
-
-    container.appendChild(list);
-  }
+  function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
 
   function addChildRow(containerId, naam = "", datum = "") {
     const container = document.getElementById(containerId);
-
     const row = document.createElement("div");
-    row.className = "child-row";
-    row.style.display = "flex";
-    row.style.marginTop = "6px";
+    row.className = "child-row"; row.style.display = "flex"; row.style.marginTop = "6px";
 
     const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.name = "kind_namen[]";
-    nameInput.placeholder = "Naam";
-    nameInput.value = naam;
-    nameInput.required = true;
-    nameInput.style.flex = "1";
+    nameInput.type = "text"; nameInput.name = "kind_namen[]"; nameInput.placeholder = "Naam";
+    nameInput.value = naam; nameInput.required = true; nameInput.style.flex = "1";
 
     const dateInput = document.createElement("input");
-    dateInput.type = "date";
-    dateInput.name = "kind_datums[]";
-    dateInput.value = datum;
-    dateInput.required = true;
-    dateInput.style.marginLeft = "6px";
+    dateInput.type = "date"; dateInput.name = "kind_datums[]"; dateInput.value = datum;
+    dateInput.required = true; dateInput.style.marginLeft = "6px";
 
     const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.textContent = "✖";
-    removeBtn.className = "remove-kind";
-    removeBtn.style.marginLeft = "6px";
+    removeBtn.type = "button"; removeBtn.textContent = "✖"; removeBtn.className = "remove-kind"; removeBtn.style.marginLeft = "6px";
     removeBtn.onclick = () => row.remove();
 
-    row.appendChild(nameInput);
-    row.appendChild(dateInput);
-    row.appendChild(removeBtn);
-
+    row.appendChild(nameInput); row.appendChild(dateInput); row.appendChild(removeBtn);
     container.appendChild(row);
   }
 
@@ -383,12 +270,8 @@
     form.action = `/verhuur/verleng/${verhuurId}`;
     document.getElementById("verleng-popup").style.display = "flex";
   }
+  function closeVerlengPopup() { document.getElementById("verleng-popup").style.display = "none"; }
 
-  function closeVerlengPopup() {
-    document.getElementById("verleng-popup").style.display = "none";
-  }
-
-  // --- Ajax handler voor verhuur verlengen ---
   document.getElementById("verleng-form").addEventListener("submit", async function(e){
     e.preventDefault();
     const form = e.target;
@@ -396,12 +279,12 @@
     const action = form.action;
 
     try {
-      const response = await fetch(action, {
-        method: 'POST',
-        body: formData
-      });
+      const response = await fetch(action, { method:'POST', body: formData });
       if(response.ok){
-        const nieuweDatum = formData.get("nieuwe_einddatum");
+        const nieuweDatumRaw = formData.get("nieuwe_einddatum"); // YYYY-MM-DD
+        const parts = nieuweDatumRaw.split("-"); // [YYYY, MM, DD]
+        const nieuweDatum = `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+
         const verhuurId = action.split("/").pop();
         const rij = document.querySelector(`tr[data-verhuur-id='${verhuurId}']`);
         if(rij){
@@ -426,47 +309,13 @@
 </script>
 
 <style>
-  .link-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    color: #2563eb;
-    text-decoration: underline;
-    cursor: pointer;
-    font: inherit;
-    text-align: left;
-  }
-
-  .status {
-    padding: 4px 8px;
-    border-radius: 6px;
-    color: white;
-    font-weight: bold;
-  }
-
-  .status.actief {
-    background-color: #16a34a;
-  }
-
-  .status.beëindigd,
-  .status.beeindigd {
-    background-color: #dc2626;
-  }
-
-  table td,
-  table th {
-      text-align: left !important;
-  }
-
-  .verleng-btn {
-    display: block;
-    margin-top: 8px;
-  }
-
-  #verleng-popup .popup {
-    max-width: 400px;
-  }
+  .link-btn { background: none; border: none; padding:0; margin:0; color:#2563eb; text-decoration:underline; cursor:pointer; font:inherit; text-align:left; }
+  .status { padding:4px 8px; border-radius:6px; color:white; font-weight:bold; }
+  .status.actief { background-color:#16a34a; }
+  .status.beëindigd, .status.beeindigd { background-color:#dc2626; }
+  table td, table th { text-align:left !important; }
+  .verleng-btn { display:block; margin-top:8px; }
+  #verleng-popup .popup { max-width:400px; }
 </style>
 
 {% endblock %}
