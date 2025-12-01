@@ -222,6 +222,17 @@ def api_fietsen_advies(kind_id):
     result = [{"itemnr": f.itemnr, "omschrijving": f"{f.merk} {f.model}", "score": score} for score, f in fietsen]
     return result
 
+@main.get("/api/kind/<int:kind_id>/lopende_verhuur")
+@rol_required(["depotmedewerker", "financieel"])
+def api_lopende_verhuur(kind_id):
+    aantal = Verhuur.query.filter_by(
+        kind_id=kind_id,
+        status=VerhuurStatusEnum.ACTIEF.value
+    ).count()
+
+    return {"aantal": aantal}
+
+
 # ---------------------- VERHUUR ----------------------
 @main.route("/verhuur")
 @rol_required(["depotmedewerker", "financieel"])

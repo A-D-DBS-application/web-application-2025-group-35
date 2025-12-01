@@ -323,6 +323,24 @@
       row.appendChild(radio);
       row.appendChild(label);
       list.appendChild(row);
+      // 🔹 Extra regel voor lopende verhuur (alleen tonen als > 0)
+      const info = document.createElement("div");
+      info.style.marginLeft = "26px";
+      info.style.fontSize = "0.85em";
+      info.style.color = "#b91c1c"; // rood
+      info.textContent = ""; // default: niks tonen
+
+      // API call naar lopende verhuur voor dit kind
+      fetch(`/api/kind/${child.id}/lopende_verhuur`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.aantal > 0) {
+            info.textContent = `${d.aantal} lopende verhuur`;
+          }
+        })
+        .catch(err => console.error("Fout bij ophalen lopende verhuur:", err));
+
+      list.appendChild(info);
     });
 
     container.appendChild(list);
