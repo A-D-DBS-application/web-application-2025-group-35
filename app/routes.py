@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, session, flash
 from functools import wraps
+from sqlalchemy import nulls_last
 
 from .models import (
     db,
@@ -161,7 +162,10 @@ def klant_bewerken(id):
 @main.route("/fietsen")
 @rol_required(["depotmedewerker", "financieel"])
 def fietsen():
-    fietsen = Item.query.all()
+    fietsen = Item.query.order_by(
+        nulls_last(Item.leeftijdscategorie)
+    ).all()
+
     return render_template(
         "fietsen.html",
         fietsen=fietsen,
