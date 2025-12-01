@@ -1,14 +1,90 @@
 {% extends 'index.html' %}
 
 {% block main_content %}
-<h2>Login</h2>
-<form method="post" action="/login">
-    <label for="rol">Kies uw rol:</label>
-    <select name="rol" id="rol" required>
-        <option value="">-- Kies --</option>
-        <option value="depotmedewerker">Depotmedewerker</option>
-        <option value="financieel">Financieel medewerker</option>
-    </select>
-    <button type="submit">Login</button>
-</form>
+<div class="login-container">
+    <h2 class="title">Inloggen</h2>
+
+    <form method="post" action="/login" class="login-form">
+        <div class="form-group">
+            <label for="rol">Selecteer uw rol</label>
+            <select name="rol" id="rol" required>
+                <option value="">— Maak een keuze —</option>
+                <option value="depotmedewerker">Depotmedewerker</option>
+                <option value="financieel">Financieel medewerker</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn-primary">Inloggen</button>
+    </form>
+</div>
+
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 40px auto;
+        padding: 30px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        text-align: center;
+        font-family: "Inter", sans-serif;
+    }
+
+    .title {
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .form-group {
+        text-align: left;
+    }
+
+    label {
+        display: block;
+        font-size: 0.95rem;
+        margin-bottom: 6px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+
+    select:focus {
+        border-color: #4a80f5;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(74, 128, 245, 0.2);
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        background: #4a80f5;
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: #3a67cc;
+    }
+</style>
 {% endblock %}
