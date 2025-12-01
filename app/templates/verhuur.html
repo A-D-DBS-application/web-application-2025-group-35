@@ -64,16 +64,21 @@
       <td>
           <span class="status {{ v.status.name | lower }}">
             {{ v.status.value }}
-           </span>
+          </span>
       </td>
       <td>
         {% if v.status == VerhuurStatusEnum.ACTIEF %}
         <form method="POST"
               action="/verhuur/beëindigen/{{ v.verhuur_id }}"
-              style="display:inline;"
+              style="display:inline-block;"
               onsubmit="return confirm('Ben je zeker dat je deze verhuur wil beëindigen?');">
           <button type="submit" class="cancel-btn">Beëindig verhuur</button>
         </form>
+
+        <button class="add-button verleng-btn"
+                onclick="openVerlengPopup({{ v.verhuur_id }}, '{{ v.einddatum.strftime('%Y-%m-%d') }}')">
+          Verleng verhuur
+        </button>
         {% else %}
           -
         {% endif %}
@@ -178,6 +183,24 @@
 
     <div class="popup-buttons">
       <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Annuleren</button>
+      <button type="submit" class="save-btn">Opslaan</button>
+    </div>
+  </form>
+</div>
+
+<!-- ============== VERHUUR VERLENGEN POPUP ============== -->
+<div id="verleng-popup" class="popup-overlay">
+  <form id="verleng-form" class="popup" method="POST">
+    <h3>Verhuur verlengen</h3>
+
+    <label>Huidige einddatum:</label>
+    <input type="text" id="huidige-einddatum" disabled>
+
+    <label>Nieuwe einddatum:</label>
+    <input type="date" name="nieuwe_einddatum" id="nieuwe-einddatum" required>
+
+    <div class="popup-buttons" style="margin-top:15px;">
+      <button type="button" class="cancel-btn" onclick="closeVerlengPopup()">Annuleren</button>
       <button type="submit" class="save-btn">Opslaan</button>
     </div>
   </form>
@@ -354,6 +377,17 @@
     container.appendChild(row);
   }
 
+  function openVerlengPopup(verhuurId, huidigeEinddatum) {
+    document.getElementById("huidige-einddatum").value = huidigeEinddatum;
+    const form = document.getElementById("verleng-form");
+    form.action = `/verhuur/verleng/${verhuurId}`;
+    document.getElementById("verleng-popup").style.display = "flex";
+  }
+
+  function closeVerlengPopup() {
+    document.getElementById("verleng-popup").style.display = "none";
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("klant-select").addEventListener("change", updateKindList);
   });
@@ -369,6 +403,7 @@
     text-decoration: underline;
     cursor: pointer;
     font: inherit;
+    text-align: left; /* klanten altijd links */
   }
 
   .status {
@@ -387,12 +422,21 @@
     background-color: #dc2626;
   }
 
-  /* 🔹 Linkse uitlijning voor kolommen 'Fiets' (2e) en 'Klant' (3e) */
-  table td:nth-child(2),
-  table th:nth-child(2),
-  table td:nth-child(3),
-  table th:nth-child(3) {
+  /* Linkse uitlijning voor alle klanten en fietsen */
+  table td,
+  table th {
       text-align: left !important;
+  }
+
+  /* Verhuur knoppen onder elkaar met verticale ruimte */
+  .verleng-btn {
+    display: block;
+    margin-top: 8px; /* verticale afstand tussen Beëindig en Verleng */
+  }
+
+  /* Verleng popup */
+  #verleng-popup .popup {
+    max-width: 400px;
   }
 </style>
 
