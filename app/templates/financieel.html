@@ -200,28 +200,38 @@
 
     <label>Voornaam:</label>
     <input type="text" name="voornaam" id="klant-voornaam" required>
+
     <label>Achternaam:</label>
     <input type="text" name="achternaam" id="klant-achternaam" required>
+
     <label>Email:</label>
     <input type="email" name="email" id="klant-email" required>
+
     <label>Straat:</label>
     <input type="text" name="straat" id="klant-straat" required>
+
     <label>Huisnummer:</label>
     <input type="text" name="huisnummer" id="klant-huisnummer" required>
+
     <label>Postcode:</label>
     <input type="number" name="postcode" id="klant-postcode" required>
+
     <label>Gemeente:</label>
     <input type="text" name="gemeente" id="klant-gemeente" required>
+
     <label>Land:</label>
     <input type="text" name="land" id="klant-land" required>
 
     <hr>
+
     <label>Kinderen:</label>
     <div id="klant-children-container"></div>
-    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">Kind toevoegen</button>
+    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">
+      Kind toevoegen
+    </button>
 
     <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Sluiten</button>
+      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Annuleren</button>
       <button type="submit" class="save-btn">Opslaan</button>
     </div>
   </form>
@@ -293,13 +303,51 @@ function editUpdateKinderList() {
 }
 
 // KLANT POPUP
+
+function addChildRow(containerId, naam = "", datum = "") {
+  const container = document.getElementById(containerId);
+
+  const row = document.createElement("div");
+  row.className = "child-row";
+  row.style.display = "flex";
+  row.style.marginTop = "6px";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.name = "kind_namen[]";
+  nameInput.placeholder = "Naam";
+  nameInput.value = naam;
+  nameInput.required = true;
+  nameInput.style.flex = "1";
+
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.name = "kind_datums[]";
+  dateInput.value = datum || "";
+  dateInput.required = true;
+  dateInput.style.marginLeft = "6px";
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.textContent = "✖";
+  removeBtn.className = "remove-kind";
+  removeBtn.style.marginLeft = "6px";
+  removeBtn.onclick = () => row.remove();
+
+  row.appendChild(nameInput);
+  row.appendChild(dateInput);
+  row.appendChild(removeBtn);
+
+  container.appendChild(row);
+}
+
 function openKlantPopup(btn) {
   const id = btn.dataset.id;
-  document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
 
   document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
   document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
   document.getElementById("klant-email").value = btn.dataset.email;
+
   document.getElementById("klant-straat").value = btn.dataset.straat;
   document.getElementById("klant-huisnummer").value = btn.dataset.huisnummer;
   document.getElementById("klant-postcode").value = btn.dataset.postcode;
@@ -309,42 +357,21 @@ function openKlantPopup(btn) {
   const container = document.getElementById("klant-children-container");
   container.innerHTML = "";
 
-  const kinderen = KIND_DATA[id] || [];
-  kinderen.forEach(k => {
-    addChildRow("klant-children-container", k.naam, k.geboortedatum);
-  });
+  const namen = (btn.dataset.kindNamen || "").split("||");
+  const datums = (btn.dataset.kindDatums || "").split("||");
 
+  if (namen.length === 1 && namen[0] === "") {
+    addChildRow("klant-children-container");
+  } else {
+    namen.forEach((naam, idx) => addChildRow("klant-children-container", naam, datums[idx]));
+  }
+
+  document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("klant-popup").style.display = "flex";
 }
+
 function closeKlantPopup() {
   document.getElementById("klant-popup").style.display = "none";
-}
-function addChildRow(containerId, naam = "", datum = "") {
-  const container = document.getElementById(containerId);
-  const row = document.createElement("div");
-  row.style.display = "flex";
-
-  const nameInput = document.createElement("input");
-  nameInput.type = "text";
-  nameInput.name = "kind_namen[]";
-  nameInput.placeholder = "Naam";
-  nameInput.value = naam;
-
-  const dateInput = document.createElement("input");
-  dateInput.type = "date";
-  dateInput.name = "kind_datums[]";
-  dateInput.value = datum;
-
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.textContent = "✖";
-  removeBtn.className = "cancel-btn";
-  removeBtn.onclick = () => row.remove();
-
-  row.appendChild(nameInput);
-  row.appendChild(dateInput);
-  row.appendChild(removeBtn);
-  container.appendChild(row);
 }
 </script>
 
