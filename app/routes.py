@@ -166,9 +166,13 @@ def fietsen():
         nulls_last(Item.leeftijdscategorie)
     ).all()
 
+    # Tel het aantal beschikbare fietsen
+    beschikbare_fietsen = Item.query.filter_by(status=StatusEnum.BESCHIKBAAR).count()
+
     return render_template(
         "fietsen.html",
         fietsen=fietsen,
+        beschikbare_fietsen=beschikbare_fietsen,
         StatusEnum=StatusEnum,
         LeeftijdEnum=LeeftijdEnum
     )
