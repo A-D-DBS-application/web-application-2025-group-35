@@ -116,7 +116,6 @@
         <option value="">-- Kies eerst een kind --</option>
     </select>
       
-
     <!-- Periode -->
     <label>Periode:</label>
     <div style="display:flex; gap:8px;">
@@ -235,46 +234,28 @@
     document.getElementById("klant-popup").style.display = "none";
   }
 
-  // 🔹 Fietsenadvies ophalen en dropdown invullen
   async function laadFietsAdvies(kindId) {
     const fietsSelect = document.getElementById("fiets-select");
     if (!fietsSelect) return;
 
-    // basisoptie
     fietsSelect.innerHTML = '<option value="">-- Kies een fiets --</option>';
 
     if (!kindId) return;
 
     try {
       const response = await fetch(`/api/fietsen-advies/${kindId}`);
-      if (!response.ok) {
-        console.error("Kon fietsenadvies niet ophalen:", response.status);
-        return;
-      }
-
       const data = await response.json();
-
-      // sorteer op score (beste eerst)
       data.sort((a, b) => b.score - a.score);
 
       data.forEach(f => {
-        const option = document.createElement("option");
-
-        // itemnr naar 5 cijfers
+        const opt = document.createElement("option");
         const nummer = String(f.itemnr).padStart(5, "0");
-        const label = `${nummer} – ${f.omschrijving}`;
-
-        const extra =
-          f.score === 2 ? " ⭐ voorgesteld" :
-          f.score === 1 ? " (alternatief)" :
-          "";
-
-        option.value = f.itemnr;
-        option.textContent = label + extra;
-
-        fietsSelect.appendChild(option);
+        const extra = f.score === 2 ? " ⭐ voorgesteld" :
+                      f.score === 1 ? " (alternatief)" : "";
+        opt.value = f.itemnr;
+        opt.textContent = `${nummer} – ${f.omschrijving}${extra}`;
+        fietsSelect.appendChild(opt);
       });
-
     } catch (err) {
       console.error("Fout bij ophalen advies:", err);
     }
@@ -286,11 +267,7 @@
     const fietsSelect = document.getElementById("fiets-select");
 
     container.innerHTML = "";
-
-    // reset fietsenlijst zodra klant verandert
-    if (fietsSelect) {
-      fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
-    }
+    fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
 
     if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
       container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
@@ -311,34 +288,28 @@
       radio.value = child.id;
       radio.required = true;
 
-      const label = document.createElement("label");
-      label.style.marginLeft = "6px";
-      label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
-
-      // 🔹 wanneer dit kind gekozen wordt → fietsenadvies laden
       radio.addEventListener("change", () => {
         laadFietsAdvies(child.id);
       });
 
+      const label = document.createElement("label");
+      label.style.marginLeft = "6px";
+      label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
+
       row.appendChild(radio);
       row.appendChild(label);
       list.appendChild(row);
-      // 🔹 Extra regel voor lopende verhuur (alleen tonen als > 0)
+
       const info = document.createElement("div");
       info.style.marginLeft = "26px";
       info.style.fontSize = "0.85em";
-      info.style.color = "#b91c1c"; // rood
-      info.textContent = ""; // default: niks tonen
+      info.style.color = "#b91c1c";
 
-      // API call naar lopende verhuur voor dit kind
       fetch(`/api/kind/${child.id}/lopende_verhuur`)
         .then(r => r.json())
         .then(d => {
-          if (d.aantal > 0) {
-            info.textContent = `${d.aantal} lopende verhuur`;
-          }
-        })
-        .catch(err => console.error("Fout bij ophalen lopende verhuur:", err));
+          if (d.aantal > 0) info.textContent = `${d.aantal} lopende verhuur`;
+        });
 
       list.appendChild(info);
     });
@@ -365,7 +336,7 @@
     const dateInput = document.createElement("input");
     dateInput.type = "date";
     dateInput.name = "kind_datums[]";
-    dateInput.value = datum || "";
+    dateInput.value = datum;
     dateInput.required = true;
     dateInput.style.marginLeft = "6px";
 
@@ -384,10 +355,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    const klantSelect = document.getElementById("klant-select");
-    if (klantSelect) {
-      klantSelect.addEventListener("change", updateKindList);
-    }
+    document.getElementById("klant-select").addEventListener("change", updateKindList);
   });
 </script>
 
@@ -402,21 +370,30 @@
     cursor: pointer;
     font: inherit;
   }
+
   .status {
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: white;
-  font-weight: bold;
-}
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+  }
 
-.status.actief {
-  background-color: #16a34a; /* groen */
-}
+  .status.actief {
+    background-color: #16a34a;
+  }
 
-.status.beëindigd,
-.status.beeindigd {
-  background-color: #dc2626; /* rood */
-}
+  .status.beëindigd,
+  .status.beeindigd {
+    background-color: #dc2626;
+  }
+
+  /* 🔹 Linkse uitlijning voor kolommen 'Fiets' (2e) en 'Klant' (3e) */
+  table td:nth-child(2),
+  table th:nth-child(2),
+  table td:nth-child(3),
+  table th:nth-child(3) {
+      text-align: left !important;
+  }
 </style>
 
 {% endblock %}
