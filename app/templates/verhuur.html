@@ -76,8 +76,10 @@
         </form>
 
         <button class="add-button verleng-btn"
-                onclick="openVerlengPopup({{ v.verhuur_id }}, '{{ v.einddatum.strftime('%d-%m-%Y') }}')">
-          Verleng verhuur
+                data-verhuur-id="{{ v.verhuur_id }}"
+                data-einddatum="{{ v.einddatum.strftime('%d-%m-%Y') if v.einddatum else '' }}"
+                onclick="openVerlengPopup(this.dataset.verhuurId, this.dataset.einddatum)">
+            Verleng verhuur
         </button>
         {% else %}
           - 
@@ -243,6 +245,103 @@
   }
   function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
 
+  async function laadFietsAdvies(kindId) {
+    const fietsSelect = document.getElementById("fiets-select");
+    if (!fietsSelect) return;
+
+    fietsSelect.innerHTML = '<option value="">-- Kies een fiets --</option>';
+
+    if (!kindId) return;
+
+    try {
+      const response = await fetch(`/api/fietsen-advies/${kindId}`);
+      const data = await response.json();
+      data.sort((a, b) => b.score - a.score);
+
+      data.forEach(f => {
+        const opt = document.createElement("option");
+        const nummer = String(f.itemnr).padStart(5, "0");
+        const extra = f.score === 2 ? " ⭐ voorgesteld" :
+                      f.score === 1 ? " (alternatief)" : "";
+        opt.value = f.itemnr;
+        opt.textContent = `${nummer} – ${f.omschrijving}${extra}`;
+        fietsSelect.appendChild(opt);
+      });
+    } catch (err) {
+      console.error("Fout bij ophalen advies:", err);
+    }
+  }
+
+  function updateKindList() {
+    const klantId = document.getElementById("klant-select").value;
+    const container = document.getElementById("kind-container");
+    const fietsSelect = document.getElementById("fiets-select");
+
+    container.innerHTML = "";
+    fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
+
+    if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
+      container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
+      return;
+    }
+
+    const list = document.createElement("div");
+
+KLANT_KIND_DATA[klantId].forEach(child => {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.flexDirection = "column"; // radio + info onder elkaar
+    row.style.marginTop = "4px";
+
+    const topRow = document.createElement("div");
+    topRow.style.display = "flex";
+    topRow.style.alignItems = "center";
+
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "kind_id";
+    radio.value = child.id;
+    radio.required = true;
+
+    radio.addEventListener("change", () => laadFietsAdvies(child.id));
+
+    const label = document.createElement("span");
+    label.style.marginLeft = "6px";
+    label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
+
+    topRow.appendChild(radio);
+    topRow.appendChild(label);
+    row.appendChild(topRow);
+
+    // lopende verhuren info
+    const info = document.createElement("span");
+    info.style.fontSize = "0.85em";
+    info.style.color = "#b91c1c";
+    info.style.marginLeft = "26px";
+    info.textContent = "Laden...";
+
+    row.appendChild(info);
+    list.appendChild(row);
+
+    // fetch lopende verhuren
+    fetch(`/api/kind/${child.id}/lopende_verhuur`)
+      .then(r => r.json())
+      .then(d => {
+          if (d.aantal > 0) {
+              info.textContent = `${d.aantal} lopende verhuur${d.aantal > 1 ? 'en' : ''}`;
+          } else {
+              info.textContent = "";
+          }
+      })
+      .catch(err => {
+          console.error(err);
+          info.textContent = "Fout bij ophalen verhuur";
+      });
+});
+
+    container.appendChild(list);
+  }
+
   function addChildRow(containerId, naam = "", datum = "") {
     const container = document.getElementById(containerId);
     const row = document.createElement("div");
@@ -307,6 +406,7 @@
     document.getElementById("klant-select").addEventListener("change", updateKindList);
   });
 </script>
+
 
 <style>
   .link-btn { background: none; border: none; padding:0; margin:0; color:#2563eb; text-decoration:underline; cursor:pointer; font:inherit; text-align:left; }
