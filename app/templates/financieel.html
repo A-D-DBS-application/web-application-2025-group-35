@@ -27,7 +27,7 @@
     <tr>
       <td>{{ "%05d" % b.id }}</td>
       <!-- KLANT -->
-      <td>
+      <td class="klant-cell">
         {% if b.kind and b.kind.verantwoordelijke %}
         <button
           type="button"
@@ -201,28 +201,38 @@
 
     <label>Voornaam:</label>
     <input type="text" name="voornaam" id="klant-voornaam" required>
+
     <label>Achternaam:</label>
     <input type="text" name="achternaam" id="klant-achternaam" required>
+
     <label>Email:</label>
     <input type="email" name="email" id="klant-email" required>
+
     <label>Straat:</label>
     <input type="text" name="straat" id="klant-straat" required>
+
     <label>Huisnummer:</label>
     <input type="text" name="huisnummer" id="klant-huisnummer" required>
+
     <label>Postcode:</label>
     <input type="number" name="postcode" id="klant-postcode" required>
+
     <label>Gemeente:</label>
     <input type="text" name="gemeente" id="klant-gemeente" required>
+
     <label>Land:</label>
     <input type="text" name="land" id="klant-land" required>
 
     <hr>
+
     <label>Kinderen:</label>
     <div id="klant-children-container"></div>
-    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">Kind toevoegen</button>
+    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">
+      Kind toevoegen
+    </button>
 
     <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Sluiten</button>
+      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Annuleren</button>
       <button type="submit" class="save-btn">Opslaan</button>
     </div>
   </form>
@@ -233,12 +243,8 @@
 const KIND_DATA = JSON.parse(`{{ klant_kind_data | tojson | safe }}`);
 
 // ADD BETALING
-function openAddBetalingPopup() {
-  document.getElementById("add-betaling-popup").style.display = "flex";
-}
-function closeAddBetalingPopup() {
-  document.getElementById("add-betaling-popup").style.display = "none";
-}
+function openAddBetalingPopup() { document.getElementById("add-betaling-popup").style.display = "flex"; }
+function closeAddBetalingPopup() { document.getElementById("add-betaling-popup").style.display = "none"; }
 function updateKinderList() {
   const klantId = document.getElementById("betaling-klant-select").value;
   const kindSelect = document.getElementById("betaling-kind-select");
@@ -256,16 +262,12 @@ function updateKinderList() {
 // EDIT BETALING
 const KIND_DATA_REVERSE = {};
 Object.entries(KIND_DATA).forEach(([klantId, children]) => {
-  children.forEach(c => {
-    KIND_DATA_REVERSE[c.id] = klantId;
-  });
+  children.forEach(c => { KIND_DATA_REVERSE[c.id] = klantId; });
 });
-
 function openEditBetalingPopup(id, itemnr, kind_id, betalingswijze, datum, bedrag) {
   const popup = document.getElementById("edit-betaling-popup");
   const form = document.getElementById("edit-betaling-form");
   form.action = `/financieel/bewerken/${id}`;
-
   document.getElementById("edit-betaling-klant-select").value = KIND_DATA_REVERSE[kind_id] || "";
   editUpdateKinderList();
   document.getElementById("edit-betaling-kind-select").value = kind_id;
@@ -273,12 +275,9 @@ function openEditBetalingPopup(id, itemnr, kind_id, betalingswijze, datum, bedra
   document.getElementById("edit-betalingwijze").value = betalingswijze;
   document.getElementById("edit-betaling-bedrag").value = bedrag;
   document.getElementById("edit-betaling-datum").value = datum;
-
   popup.style.display = "flex";
 }
-function closeEditBetalingPopup() {
-  document.getElementById("edit-betaling-popup").style.display = "none";
-}
+function closeEditBetalingPopup() { document.getElementById("edit-betaling-popup").style.display = "none"; }
 function editUpdateKinderList() {
   const klantId = document.getElementById("edit-betaling-klant-select").value;
   const kindSelect = document.getElementById("edit-betaling-kind-select");
@@ -294,10 +293,31 @@ function editUpdateKinderList() {
 }
 
 // KLANT POPUP
+function addChildRow(containerId, naam = "", datum = "") {
+  const container = document.getElementById(containerId);
+  const row = document.createElement("div");
+  row.className = "child-row";
+  row.style.display = "flex";
+  row.style.marginTop = "6px";
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text"; nameInput.name = "kind_namen[]"; nameInput.placeholder = "Naam";
+  nameInput.value = naam; nameInput.required = true; nameInput.style.flex = "1";
+
+  const dateInput = document.createElement("input");
+  dateInput.type = "date"; dateInput.name = "kind_datums[]"; dateInput.value = datum || "";
+  dateInput.required = true; dateInput.style.marginLeft = "6px";
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button"; removeBtn.textContent = "✖"; removeBtn.className = "remove-kind"; removeBtn.style.marginLeft = "6px";
+  removeBtn.onclick = () => row.remove();
+
+  row.appendChild(nameInput); row.appendChild(dateInput); row.appendChild(removeBtn);
+  container.appendChild(row);
+}
+
 function openKlantPopup(btn) {
   const id = btn.dataset.id;
-  document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
-
   document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
   document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
   document.getElementById("klant-email").value = btn.dataset.email;
@@ -310,86 +330,36 @@ function openKlantPopup(btn) {
   const container = document.getElementById("klant-children-container");
   container.innerHTML = "";
 
-  const kinderen = KIND_DATA[id] || [];
-  kinderen.forEach(k => {
-    addChildRow("klant-children-container", k.naam, k.geboortedatum);
-  });
+  const namen = (btn.dataset.kindNamen || "").split("||");
+  const datums = (btn.dataset.kindDatums || "").split("||");
 
+  if (namen.length === 1 && namen[0] === "") {
+    addChildRow("klant-children-container");
+  } else {
+    namen.forEach((naam, idx) => addChildRow("klant-children-container", naam, datums[idx]));
+  }
+
+  document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("klant-popup").style.display = "flex";
 }
-function closeKlantPopup() {
-  document.getElementById("klant-popup").style.display = "none";
-}
-function addChildRow(containerId, naam = "", datum = "") {
-  const container = document.getElementById(containerId);
-  const row = document.createElement("div");
-  row.style.display = "flex";
 
-  const nameInput = document.createElement("input");
-  nameInput.type = "text";
-  nameInput.name = "kind_namen[]";
-  nameInput.placeholder = "Naam";
-  nameInput.value = naam;
-
-  const dateInput = document.createElement("input");
-  dateInput.type = "date";
-  dateInput.name = "kind_datums[]";
-  dateInput.value = datum;
-
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.textContent = "✖";
-  removeBtn.className = "cancel-btn";
-  removeBtn.onclick = () => row.remove();
-
-  row.appendChild(nameInput);
-  row.appendChild(dateInput);
-  row.appendChild(removeBtn);
-  container.appendChild(row);
-}
+function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
 </script>
 
 <style>
 .link-btn {
-  background: none;
-  border: none;
-  color: #2563eb;
-  text-decoration: underline;
-  cursor: pointer;
-  font: inherit;
+  background: none; border: none; color: #2563eb;
+  text-decoration: underline; cursor: pointer; font: inherit;
+  text-align: left; /* <<< alles links uitlijnen */
 }
+.klant-cell { text-align: left; } /* <<< klant kolom links */
 .betaling-status {
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: white;
-  font-weight: bold;
+  padding: 4px 8px; border-radius: 6px; color: white; font-weight: bold;
 }
-
-.betaling-status {
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: white;
-  font-weight: bold;
-}
-
-/* Groen voor voldaan */
 .betaling-status.contant,
 .betaling-status.kaart,
-.betaling-status.overschrijven_voldaan {
-  background-color: #16a34a;
-}
-
-/* Rood voor niet voldaan */
-.betaling-status.overschrijven_niet_voldaan {
-  background-color: #dc2626;
-}
+.betaling-status.overschrijven_voldaan { background-color: #16a34a; }
+.betaling-status.overschrijven_niet_voldaan { background-color: #dc2626; }
 </style>
 
 {% endblock %}
-
-
-
-
-
-
-

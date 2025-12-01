@@ -150,6 +150,49 @@
             padding: 8px;
             width: 260px;
         }
+
+        
+        .status-beschikbaar {
+            color: #0c7a00;
+            font-weight: bold;
+        }
+
+        .status-verhuurd {
+            color: #c40000;
+            font-weight: bold;
+        }
+
+        .status-onderhoud {
+            color: #d98600;
+            font-weight: bold;
+
+        }    
+        input, select, textarea {
+            padding: 10px 12px;     /* meer ruimte boven/onder + links/rechts */
+            margin-bottom: 14px;    /* ruimte TUSSEN velden */
+            border-radius: 6px;     /* mooier */
+            border: 1px solid #ccc; /* nette rand */
+            font-size: 15px;
+        }
+        /* Klein rood kruisje voor kind-verwijderen */
+        .remove-kind {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 0 8px;          /* breedte */
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 6px;
+            height: 52px;             /* auto i.p.v. vaste 52px */
+        }
+
+        .remove-kind:hover {
+            background: #b91c1c;
+        }
     </style>
 
 </head>

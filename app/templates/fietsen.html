@@ -3,6 +3,7 @@
 
 {% block main_content %}
 
+
 <h1>Fietsen</h1>
 <p class="count-text">Aantal fietsen: {{ fietsen|length }}</p>
 
@@ -29,7 +30,9 @@
       <td>{{ "%05d" % f.itemnr }}</td>
       <td>{{ f.merk }}</td>
       <td>{{ f.model }}</td>
-      <td>{{ f.status.value }}</td>
+      <td class="status-{{ f.status.name | lower }}">
+          {{ f.status.value }}
+      </td>
       <td>{{ f.leeftijdscategorie.value if f.leeftijdscategorie else "-" }}</td>
 
       <td>
