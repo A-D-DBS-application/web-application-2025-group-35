@@ -4,9 +4,9 @@
 {% block main_content %}
 
 <h1>Verhuur</h1>
-<p class="count-text">Totaal verhuur: {{ verhuur_lijst|length }}</p>
+<p class="count-text">Totaal actief verhuur: {{ totaal_actief }}</p>
 
-<button class="add-button" onclick="openVerhuurPopup()">➕ Nieuwe verhuur</button>
+<button class="add-button" onclick="openVerhuurPopup()"> Nieuwe verhuur</button>
 
 <table>
   <thead>
@@ -62,7 +62,9 @@
         {{ v.startdatum.strftime('%d-%m-%Y') }} – {{ v.einddatum.strftime('%d-%m-%Y') }}
       </td>
       <td>
-        {{ v.status.value }}
+          <span class="status {{ v.status.name | lower }}">
+            {{ v.status.value }}
+           </span>
       </td>
       <td>
         {% if v.status == VerhuurStatusEnum.ACTIEF %}
@@ -264,7 +266,7 @@
 
         const extra =
           f.score === 2 ? " ⭐ voorgesteld" :
-          f.score === 1 ? " (kan ook)" :
+          f.score === 1 ? " (alternatief)" :
           "";
 
         option.value = f.itemnr;
@@ -321,6 +323,24 @@
       row.appendChild(radio);
       row.appendChild(label);
       list.appendChild(row);
+      // 🔹 Extra regel voor lopende verhuur (alleen tonen als > 0)
+      const info = document.createElement("div");
+      info.style.marginLeft = "26px";
+      info.style.fontSize = "0.85em";
+      info.style.color = "#b91c1c"; // rood
+      info.textContent = ""; // default: niks tonen
+
+      // API call naar lopende verhuur voor dit kind
+      fetch(`/api/kind/${child.id}/lopende_verhuur`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.aantal > 0) {
+            info.textContent = `${d.aantal} lopende verhuur`;
+          }
+        })
+        .catch(err => console.error("Fout bij ophalen lopende verhuur:", err));
+
+      list.appendChild(info);
     });
 
     container.appendChild(list);
@@ -352,7 +372,7 @@
     const removeBtn = document.createElement("button");
     removeBtn.type = "button";
     removeBtn.textContent = "✖";
-    removeBtn.className = "cancel-btn";
+    removeBtn.className = "remove-kind";
     removeBtn.style.marginLeft = "6px";
     removeBtn.onclick = () => row.remove();
 
@@ -382,6 +402,21 @@
     cursor: pointer;
     font: inherit;
   }
+  .status {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+}
+
+.status.actief {
+  background-color: #16a34a; /* groen */
+}
+
+.status.beëindigd,
+.status.beeindigd {
+  background-color: #dc2626; /* rood */
+}
 </style>
 
 {% endblock %}

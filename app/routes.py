@@ -219,22 +219,54 @@ def fiets_bewerken(itemnr):
 def api_fietsen_advies(kind_id):
     kind = Kind.query.get_or_404(kind_id)
     fietsen = fietsen_voor_leeftijd(kind)
-    result = [{"itemnr": f.itemnr, "omschrijving": f"{f.itemnr} – {f.merk} {f.model}", "score": score} for score, f in fietsen]
+    result = [{"itemnr": f.itemnr, "omschrijving": f"{f.merk} {f.model}", "score": score} for score, f in fietsen]
     return result
+
+@main.get("/api/kind/<int:kind_id>/lopende_verhuur")
+@rol_required(["depotmedewerker", "financieel"])
+def api_lopende_verhuur(kind_id):
+    aantal = Verhuur.query.filter_by(
+        kind_id=kind_id,
+        status=VerhuurStatusEnum.ACTIEF.value
+    ).count()
+
+    return {"aantal": aantal}
+
 
 # ---------------------- VERHUUR ----------------------
 @main.route("/verhuur")
 @rol_required(["depotmedewerker", "financieel"])
 def verhuur():
     verantwoordelijken = Verantwoordelijke.query.all()
-    klant_kind_data = {v.verantwoordelijke_id: [{"id": k.kind_id, "naam": k.naam, "leeftijd": k.leeftijd, "geboortedatum": k.geboortedatum.isoformat()} for k in v.kinderen] for v in verantwoordelijken}
+
+    klant_kind_data = {
+        v.verantwoordelijke_id: [
+            {
+                "id": k.kind_id,
+                "naam": k.naam,
+                "leeftijd": k.leeftijd,
+                "geboortedatum": k.geboortedatum.isoformat(),
+            }
+            for k in v.kinderen
+        ]
+        for v in verantwoordelijken
+    }
+
+    # aantal actieve verhuren tellen
+    actieve_verhuur = Verhuur.query.filter_by(
+        status=VerhuurStatusEnum.ACTIEF.value
+    ).count()
+
     return render_template(
         "verhuur.html",
         verhuur_lijst=Verhuur.query.order_by(Verhuur.startdatum.desc()).all(),
+        totaal_actief=actieve_verhuur,
         verantwoordelijken=verantwoordelijken,
-        beschikbare_fietsen=Item.query.filter(Item.status == StatusEnum.BESCHIKBAAR).all(),
+        beschikbare_fietsen=Item.query.filter(
+            Item.status == StatusEnum.BESCHIKBAAR
+        ).all(),
         klant_kind_data=klant_kind_data,
-        VerhuurStatusEnum=VerhuurStatusEnum
+        VerhuurStatusEnum=VerhuurStatusEnum,
     )
 
 @main.post("/verhuur/toevoegen")
@@ -278,7 +310,7 @@ def financieel():
     klant_kind_data = {v.verantwoordelijke_id: [{"id": k.kind_id, "naam": k.naam, "leeftijd": k.leeftijd, "geboortedatum": k.geboortedatum.isoformat()} for k in v.kinderen] for v in verantwoordelijken}
     return render_template(
         "financieel.html",
-        betalingen=Betaling.query.all(),
+        betalingen=Betaling.query.order_by(Betaling.datum.desc()).all(),
         fietsen=Item.query.all(),
         verantwoordelijken=verantwoordelijken,
         klant_kind_data=klant_kind_data,
