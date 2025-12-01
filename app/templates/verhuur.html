@@ -212,7 +212,7 @@
   {{ klant_kind_data | tojson | safe }}
 </script>
 
-<script>
+  <script>
   const KLANT_KIND_DATA = JSON.parse(document.getElementById("klant-kind-data").textContent);
 
   function openVerhuurPopup() {
@@ -245,7 +245,7 @@
   }
   function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
 
-  async function laadFietsAdvies(kindId) {
+    async function laadFietsAdvies(kindId) {
     const fietsSelect = document.getElementById("fiets-select");
     if (!fietsSelect) return;
 
@@ -287,61 +287,46 @@
 
     const list = document.createElement("div");
 
-KLANT_KIND_DATA[klantId].forEach(child => {
-    const row = document.createElement("div");
-    row.style.display = "flex";
-    row.style.flexDirection = "column"; // radio + info onder elkaar
-    row.style.marginTop = "4px";
+    KLANT_KIND_DATA[klantId].forEach(child => {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.marginTop = "4px";
 
-    const topRow = document.createElement("div");
-    topRow.style.display = "flex";
-    topRow.style.alignItems = "center";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "kind_id";
+      radio.value = child.id;
+      radio.required = true;
 
-    const radio = document.createElement("input");
-    radio.type = "radio";
-    radio.name = "kind_id";
-    radio.value = child.id;
-    radio.required = true;
-
-    radio.addEventListener("change", () => laadFietsAdvies(child.id));
-
-    const label = document.createElement("span");
-    label.style.marginLeft = "6px";
-    label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
-
-    topRow.appendChild(radio);
-    topRow.appendChild(label);
-    row.appendChild(topRow);
-
-    // lopende verhuren info
-    const info = document.createElement("span");
-    info.style.fontSize = "0.85em";
-    info.style.color = "#b91c1c";
-    info.style.marginLeft = "26px";
-    info.textContent = "Laden...";
-
-    row.appendChild(info);
-    list.appendChild(row);
-
-    // fetch lopende verhuren
-    fetch(`/api/kind/${child.id}/lopende_verhuur`)
-      .then(r => r.json())
-      .then(d => {
-          if (d.aantal > 0) {
-              info.textContent = `${d.aantal} lopende verhuur${d.aantal > 1 ? 'en' : ''}`;
-          } else {
-              info.textContent = "";
-          }
-      })
-      .catch(err => {
-          console.error(err);
-          info.textContent = "Fout bij ophalen verhuur";
+      radio.addEventListener("change", () => {
+        laadFietsAdvies(child.id);
       });
-});
+
+      const label = document.createElement("label");
+      label.style.marginLeft = "6px";
+      label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
+
+      row.appendChild(radio);
+      row.appendChild(label);
+      list.appendChild(row);
+
+      const info = document.createElement("div");
+      info.style.marginLeft = "26px";
+      info.style.fontSize = "0.85em";
+      info.style.color = "#b91c1c";
+
+      fetch(`/api/kind/${child.id}/lopende_verhuur`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.aantal > 0) info.textContent = `${d.aantal} lopende verhuur`;
+        });
+
+      list.appendChild(info);
+    });
 
     container.appendChild(list);
   }
-
   function addChildRow(containerId, naam = "", datum = "") {
     const container = document.getElementById(containerId);
     const row = document.createElement("div");
