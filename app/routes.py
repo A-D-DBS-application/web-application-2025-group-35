@@ -344,7 +344,6 @@ def verhuur_verleng(verhuur_id):
 @rol_required(["financieel"])
 def financieel():
     verantwoordelijken = Verantwoordelijke.query.all()
-
     klant_kind_data = {
         v.verantwoordelijke_id: [
             {
@@ -370,7 +369,7 @@ def financieel():
         verantwoordelijken=verantwoordelijken,
         klant_kind_data=klant_kind_data,
         BetalingswijzeEnum=BetalingswijzeEnum,
-        niet_voltooid=niet_voltooid    # 🔹 EXTRA MEEGEVEN AAN HTML
+        niet_voltooid=niet_voltooid
     )
 
 @main.post("/financieel/toevoegen")
