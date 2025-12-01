@@ -1,4 +1,4 @@
-{% extends 'index.html' %}
+{% extends 'index.html' %} 
 {% set title = "Verhuur - Bike Lending Portaal" %}
 
 {% block main_content %}
@@ -22,7 +22,7 @@
   </thead>
   <tbody>
     {% for v in verhuur_lijst %}
-    <tr>
+    <tr data-verhuur-id="{{ v.verhuur_id }}">
       <td>{{ "%05d" % v.verhuur_id }}</td>
       <td>
         {% if v.item %}
@@ -62,9 +62,9 @@
         {{ v.startdatum.strftime('%d-%m-%Y') }} – {{ v.einddatum.strftime('%d-%m-%Y') }}
       </td>
       <td>
-          <span class="status {{ v.status.name | lower }}">
-            {{ v.status.value }}
-          </span>
+        <span class="status {{ v.status.name | lower }}">
+          {{ v.status.value }}
+        </span>
       </td>
       <td>
         {% if v.status == VerhuurStatusEnum.ACTIEF %}
@@ -80,7 +80,7 @@
           Verleng verhuur
         </button>
         {% else %}
-          -
+          - 
         {% endif %}
       </td>
     </tr>
@@ -388,6 +388,38 @@
     document.getElementById("verleng-popup").style.display = "none";
   }
 
+  // --- Ajax handler voor verhuur verlengen ---
+  document.getElementById("verleng-form").addEventListener("submit", async function(e){
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const action = form.action;
+
+    try {
+      const response = await fetch(action, {
+        method: 'POST',
+        body: formData
+      });
+      if(response.ok){
+        const nieuweDatum = formData.get("nieuwe_einddatum");
+        const verhuurId = action.split("/").pop();
+        const rij = document.querySelector(`tr[data-verhuur-id='${verhuurId}']`);
+        if(rij){
+          const periodeCel = rij.querySelector("td:nth-child(5)");
+          const huidigeStart = periodeCel.textContent.split("–")[0].trim();
+          periodeCel.textContent = `${huidigeStart} – ${nieuweDatum}`;
+        }
+        closeVerlengPopup();
+        alert(`Verhuur ${verhuurId} verlengd tot ${nieuweDatum}.`);
+      } else {
+        alert("Kon de verhuur niet verlengen.");
+      }
+    } catch(err){
+      console.error(err);
+      alert("Er is iets misgegaan bij verlengen.");
+    }
+  });
+
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("klant-select").addEventListener("change", updateKindList);
   });
@@ -403,7 +435,7 @@
     text-decoration: underline;
     cursor: pointer;
     font: inherit;
-    text-align: left; /* klanten altijd links */
+    text-align: left;
   }
 
   .status {
@@ -422,19 +454,16 @@
     background-color: #dc2626;
   }
 
-  /* Linkse uitlijning voor alle klanten en fietsen */
   table td,
   table th {
       text-align: left !important;
   }
 
-  /* Verhuur knoppen onder elkaar met verticale ruimte */
   .verleng-btn {
     display: block;
-    margin-top: 8px; /* verticale afstand tussen Beëindig en Verleng */
+    margin-top: 8px;
   }
 
-  /* Verleng popup */
   #verleng-popup .popup {
     max-width: 400px;
   }

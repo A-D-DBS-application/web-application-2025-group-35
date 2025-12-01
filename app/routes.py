@@ -302,6 +302,43 @@ def verhuur_beeindigen(verhuur_id):
     db.session.commit()
     return redirect("/verhuur")
 
+
+@main.post("/verhuur/verleng/<int:verhuur_id>")
+@rol_required(["depotmedewerker", "financieel"])
+def verhuur_verleng(verhuur_id):
+    # Haal de verhuur op
+    verh = Verhuur.query.get_or_404(verhuur_id)
+
+    # Alleen actieve verhuren kunnen verlengd worden
+    if verh.status != VerhuurStatusEnum.ACTIEF.value:
+        flash("Alleen actieve verhuur kan verlengd worden.", "error")
+        return redirect("/verhuur")
+
+    # Nieuwe einddatum ophalen uit formulier
+    nieuwe_einddatum_str = request.form.get("nieuwe_einddatum")
+    if not nieuwe_einddatum_str:
+        flash("Geen nieuwe einddatum opgegeven.", "error")
+        return redirect("/verhuur")
+
+    try:
+        nieuwe_einddatum = datetime.strptime(nieuwe_einddatum_str, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Ongeldige datum.", "error")
+        return redirect("/verhuur")
+
+    # Controleer dat nieuwe einddatum later is dan huidige einddatum
+    if nieuwe_einddatum <= verh.einddatum:
+        flash("Nieuwe einddatum moet na de huidige einddatum liggen.", "error")
+        return redirect("/verhuur")
+
+    # Verhuur verlengen
+    verh.einddatum = nieuwe_einddatum
+    db.session.commit()
+
+    flash(f"Verhuur {verhuur_id} verlengd tot {nieuwe_einddatum}.", "success")
+    return redirect("/verhuur")
+
+
 # ---------------------- FINANCIEEL ----------------------
 @main.route("/financieel")
 @rol_required(["financieel"])
