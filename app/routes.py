@@ -219,7 +219,7 @@ def fiets_bewerken(itemnr):
 def api_fietsen_advies(kind_id):
     kind = Kind.query.get_or_404(kind_id)
     fietsen = fietsen_voor_leeftijd(kind)
-    result = [{"itemnr": f.itemnr, "omschrijving": f"{f.itemnr} – {f.merk} {f.model}", "score": score} for score, f in fietsen]
+    result = [{"itemnr": f.itemnr, "omschrijving": f"{f.merk} {f.model}", "score": score} for score, f in fietsen]
     return result
 
 # ---------------------- VERHUUR ----------------------
