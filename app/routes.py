@@ -109,51 +109,50 @@ def klant_toevoegen():
 @rol_required(["depotmedewerker", "financieel"])
 def klant_bewerken(id):
     klant = Verantwoordelijke.query.get_or_404(id)
-    klant.voornaam = request.form.get("voornaam")
-    klant.achternaam = request.form.get("achternaam")
-    klant.email = request.form.get("email")
 
-    if klant.adres:
-        klant.adres.straat = request.form.get("straat")
-        klant.adres.huisnummer = request.form.get("huisnummer")
-        postcode_str = request.form.get("postcode")
-        if postcode_str:
-            try:
-                klant.adres.postcode = int(postcode_str)
-            except ValueError:
-                pass
-        klant.adres.gemeente = request.form.get("gemeente")
-        klant.adres.land = request.form.get("land")
+    # --- UPDATE KLANT ---
+    klant.voornaam = request.form["voornaam"]
+    klant.achternaam = request.form["achternaam"]
+    klant.email = request.form["email"]
+
+    # --- UPDATE ADRES ---
+    klant.adres.straat = request.form["straat"]
+    klant.adres.huisnummer = request.form["huisnummer"]
+    try:
+        klant.adres.postcode = int(request.form["postcode"])
+    except ValueError:
+        pass
+    klant.adres.gemeente = request.form["gemeente"]
+    klant.adres.land = request.form["land"]
 
     # --- KINDEREN ---
-    bestaande_kinderen = {k.kind_id: k for k in klant.kinderen}
-    nieuwe_namen = request.form.getlist("kind_namen[]")
-    nieuwe_datums = request.form.getlist("kind_datums[]")
+    ids = request.form.getlist("kind_ids[]")
+    namen = request.form.getlist("kind_namen[]")
+    datums = request.form.getlist("kind_datums[]")
 
-    nieuwe_kinderen = []
-    for naam, datum in zip(nieuwe_namen, nieuwe_datums):
-        if naam.strip():
-            nieuwe_kinderen.append((naam, datum))
+    bestaande = {k.kind_id: k for k in klant.kinderen}
+    ontvangen_ids = set()
 
-    bestaand_set = {(k.naam, k.geboortedatum.isoformat()) for k in bestaande_kinderen.values()}
-    nieuw_set = set(nieuwe_kinderen)
+    for kid, naam, datum in zip(ids, namen, datums):
+        if kid:  # bestaand kind → update
+            kid = int(kid)
+            ontvangen_ids.add(kid)
+            kind = bestaande[kid]
+            kind.naam = naam
+            kind.geboortedatum = datum
+        else:  # nieuw kind
+            if naam.strip():
+                nieuw_kind = Kind(
+                    naam=naam,
+                    geboortedatum=datum,
+                    verantwoordelijke_id=id
+                )
+                db.session.add(nieuw_kind)
 
-    te_verwijderen = bestaand_set - nieuw_set
-    toe_te_voegen = nieuw_set - bestaand_set
-
-    for naam, datum in te_verwijderen:
-        kind = next(k for k in bestaande_kinderen.values()
-                    if k.naam == naam and k.geboortedatum.isoformat() == datum)
-        if not kind.betalingen and not getattr(kind, 'verhuren', []):
-            db.session.delete(kind)
-
-    for naam, datum in toe_te_voegen:
-        nieuw_kind = Kind(
-            naam=naam,
-            geboortedatum=datum,
-            verantwoordelijke_id=id
-        )
-        db.session.add(nieuw_kind)
+    # Kinderen verwijderen die niet meer in formulier staan
+    for kid in list(bestaande.keys()):
+        if kid not in ontvangen_ids:
+            db.session.delete(bestaande[kid])
 
     db.session.commit()
     return redirect("/klanten")

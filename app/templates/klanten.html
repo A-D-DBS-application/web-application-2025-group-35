@@ -57,6 +57,7 @@
           data-postcode="{{ v.adres.postcode }}"
           data-gemeente="{{ v.adres.gemeente }}"
           data-land="{{ v.adres.land }}"
+          data-kind-ids="{{ v.kinderen|map(attribute='kind_id')|join('||') }}"
           data-kind-namen="{{ v.kinderen|map(attribute='naam')|join('||') }}"
           data-kind-datums="{{ v.kinderen|map(attribute='geboortedatum')|join('||') }}"
           onclick="openEditPopup(this)"
@@ -175,7 +176,7 @@ function filterKlanten() {
   });
 }
 
-function addChildRow(containerId, naam = "", datum = "") {
+function addChildRow(containerId, naam = "", datum = "", id = "") {
   const container = document.getElementById(containerId);
 
   const row = document.createElement("div");
@@ -198,6 +199,12 @@ function addChildRow(containerId, naam = "", datum = "") {
   dateInput.required = true;
   dateInput.style.marginLeft = "6px";
 
+  // hidden input voor kind_id
+  const idInput = document.createElement("input");
+  idInput.type = "hidden";
+  idInput.name = "kind_ids[]";
+  idInput.value = id;
+
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
   removeBtn.textContent = "✖";
@@ -207,6 +214,7 @@ function addChildRow(containerId, naam = "", datum = "") {
 
   row.appendChild(nameInput);
   row.appendChild(dateInput);
+  row.appendChild(idInput);
   row.appendChild(removeBtn);
 
   container.appendChild(row);
@@ -224,11 +232,13 @@ function closeAddPopup() {
   document.getElementById("add-popup").style.display = "none";
 }
 
+
 function openEditPopup(btn) {
   const container = document.getElementById("edit-children-container");
   container.innerHTML = "";
 
   const id = btn.dataset.id;
+  const ids = (btn.dataset.kindIds || "").split("||");
   const namen = (btn.dataset.kindNamen || "").split("||");
   const datums = (btn.dataset.kindDatums || "").split("||");
 
@@ -245,7 +255,7 @@ function openEditPopup(btn) {
   if (namen.length === 1 && namen[0] === "") {
     addChildRow("edit-children-container");
   } else {
-    namen.forEach((naam, idx) => addChildRow("edit-children-container", naam, datums[idx]));
+    namen.forEach((naam, idx) => addChildRow("edit-children-container", naam, datums[idx], ids[idx]));
   }
 
   document.getElementById("edit-form").action = `/klanten/bewerken/${id}`;
