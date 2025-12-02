@@ -48,6 +48,10 @@
           onclick="openEditPopup(this)">
           ✏️ Bewerken
         </button>
+
+        <form method="POST" action="/fietsen/archiveren/{{ f.itemnr }}" style="display:inline;" onsubmit="return confirm('Weet je zeker dat je deze fiets wilt archiveren?');">
+          <button type="submit" class="archive-btn">🗑️ Archiveren</button>
+        </form>
       </td>
     </tr>
     {% endfor %}
@@ -166,11 +170,3 @@ function closeEditPopup() {
 {% endraw %}
 
 {% endblock %}
-
-
-
-
-
-
-
-

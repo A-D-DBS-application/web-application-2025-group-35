@@ -12,6 +12,7 @@ class StatusEnum(Enum):
     BESCHIKBAAR = "beschikbaar"
     VERHUURD = "uitgeleend"
     ONDERHOUD = "op onderhoud"
+    GEARCHIVEERD = "gearchiveerd"
 
 
 class LeeftijdEnum(Enum):
