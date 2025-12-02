@@ -1,0 +1,59 @@
+{% extends 'index.html' %}
+{% set title = "Voorspelling - Bike Lending Portaal" %}
+
+{% block main_content %}
+<h1>Voorspelling toekomstige vraag</h1>
+<p>Dit algoritme voorspelt de drukte per leeftijdscategorie, gebaseerd op lopende verhuren.</p>
+
+<canvas id="vraagChart" width="600" height="400"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const voorspellingData = JSON.parse(`{{ voorspelling | tojson | safe }}`);
+
+  const labels = Object.keys(voorspellingData);
+  const data = Object.values(voorspellingData);
+
+  // Dynamische kleuren: groen → oranje → rood
+  const maxAantal = Math.max(...data, 1);
+  const backgroundColors = data.map(aantal => {
+    const ratio = aantal / maxAantal;
+    if (ratio > 0.66) return 'rgba(220, 38, 38, 0.8)';    // rood
+    else if (ratio > 0.33) return 'rgba(234, 179, 8, 0.8)'; // oranje
+    else return 'rgba(22, 163, 52, 0.8)';                   // groen
+  });
+
+  const ctx = document.getElementById('vraagChart').getContext('2d');
+  const vraagChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Voorspelde vraag (aantal kinderen)',
+        data: data,
+        backgroundColor: backgroundColors,
+        borderColor: 'rgba(0,0,0,0.3)',
+        borderWidth: 1,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Toekomstige vraag per leeftijdscategorie' },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.parsed.y} kinderen`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Aantal kinderen' } },
+        x: { title: { display: true, text: 'Leeftijdscategorie' } }
+      }
+    }
+  });
+</script>
+{% endblock %}
