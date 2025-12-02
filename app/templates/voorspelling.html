@@ -2,58 +2,95 @@
 {% set title = "Voorspelling - Bike Lending Portaal" %}
 
 {% block main_content %}
-<h1>Voorspelling toekomstige vraag</h1>
+<h1 style="margin-bottom: 10px;">Voorspelling toekomstige vraag</h1>
 <p>Dit algoritme voorspelt de drukte per leeftijdscategorie, gebaseerd op lopende verhuren.</p>
+<p><em>Voorspelling voor de komende 6 maanden</em></p>
 
-<canvas id="vraagChart" width="600" height="400"></canvas>
+<!-- 📌 LEGENDE -->
+<div style="margin-top: 15px; margin-bottom: 10px; font-size: 14px;">
+    <strong>Legenda:</strong><br>
+    <span style="display:inline-block; width:15px; height:15px; background:rgba(22,163,52,0.85); margin-right:6px;"></span>
+    Lage voorspelde drukte (groen)<br>
+    <span style="display:inline-block; width:15px; height:15px; background:rgba(234,179,8,0.85); margin-right:6px;"></span>
+    Gemiddelde voorspelde drukte (oranje)<br>
+    <span style="display:inline-block; width:15px; height:15px; background:rgba(220,38,38,0.85); margin-right:6px;"></span>
+    Hoge voorspelde drukte (rood)
+</div>
+
+<!-- 📊 GRAFIEK -->
+<div style="max-width: 700px; height: 400px; margin-top: 15px;">
+    <canvas id="vraagChart"></canvas>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const voorspellingData = JSON.parse(`{{ voorspelling | tojson | safe }}`);
 
-  const labels = Object.keys(voorspellingData);
-  const data = Object.values(voorspellingData);
+  const labels = [
+    '1 - 4 jaar (loopfietsen)',
+    '4 - 6 jaar',
+    '6 - 8 jaar',
+    '8 - 12 jaar',
+    '14 - 16 jaar',
+    'Ouder dan 16 jaar'
+  ];
 
-  // Dynamische kleuren: groen → oranje → rood
+  const data = labels.map(label => voorspellingData[label] || 0);
+
   const maxAantal = Math.max(...data, 1);
-  const backgroundColors = data.map(aantal => {
+
+  // 🎨 Kleurcode dynamisch
+  const kleuren = data.map(aantal => {
     const ratio = aantal / maxAantal;
-    if (ratio > 0.66) return 'rgba(220, 38, 38, 0.8)';    // rood
-    else if (ratio > 0.33) return 'rgba(234, 179, 8, 0.8)'; // oranje
-    else return 'rgba(22, 163, 52, 0.8)';                   // groen
+    if (ratio > 0.66) return 'rgba(220, 38, 38, 0.85)';     // rood
+    if (ratio > 0.33) return 'rgba(234, 179, 8, 0.85)';     // oranje
+    return 'rgba(22, 163, 52, 0.85)';                       // groen
   });
 
   const ctx = document.getElementById('vraagChart').getContext('2d');
-  const vraagChart = new Chart(ctx, {
+
+  new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: labels,
+      labels,
       datasets: [{
-        label: 'Voorspelde vraag (aantal kinderen)',
-        data: data,
-        backgroundColor: backgroundColors,
-        borderColor: 'rgba(0,0,0,0.3)',
+        label: 'Voorspelde vrijgekomen fietsen binnen 6 maanden',
+        data,
+        backgroundColor: kleuren,
+        borderColor: 'rgba(0,0,0,0.25)',
         borderWidth: 1,
+        borderRadius: 6
       }]
     },
     options: {
       responsive: true,
       plugins: {
         legend: { display: false },
-        title: { display: true, text: 'Toekomstige vraag per leeftijdscategorie' },
+
+        title: {
+          display: true,
+          text: 'Voorspelde drukte per leeftijdscategorie',
+          font: { size: 18 }
+        },
+
         tooltip: {
           callbacks: {
-            label: function(context) {
-              return `${context.parsed.y} kinderen`;
-            }
+            label: context => `${context.parsed.y} verhuur verwacht`
           }
         }
       },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'Aantal kinderen' } },
-        x: { title: { display: true, text: 'Leeftijdscategorie' } }
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          title: { display: true, text: 'Aantal voorspelde vrijgekomen fietsen' }
+        },
+        x: {
+          title: { display: true, text: 'Leeftijdscategorie' }
+        }
       }
     }
   });
 </script>
+
 {% endblock %}

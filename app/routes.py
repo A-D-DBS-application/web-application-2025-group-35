@@ -413,3 +413,19 @@ def betaling_bewerken(betaling_id):
     db.session.commit()
     flash(f"Betaling {betaling_id} aangepast.", "success")
     return redirect("/financieel")
+# ---------------------- VOORSPELLING ----------------------
+@main.route("/voorspelling")
+@rol_required(["depotmedewerker", "financieel"])
+def voorspelling():
+    """
+    Toont de voorspelling van toekomstige vraag per leeftijdscategorie.
+    """
+    from .algorithm_voorspelling import voorspelde_drukte
+
+    try:
+        data = voorspelde_drukte()  # dit moet een dict teruggeven, bv. {"4-5": 3, "6-8": 12}
+    except Exception as e:
+        print("Fout bij voorspelling:", e)
+        data = {}
+
+    return render_template("voorspelling.html", voorspelling=data)
