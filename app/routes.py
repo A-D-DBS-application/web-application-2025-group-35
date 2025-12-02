@@ -221,6 +221,15 @@ def fiets_bewerken(itemnr):
     db.session.commit()
     return redirect("/fietsen")
 
+# ---------------------- ARCHIVEREN FIETS ----------------------
+@main.post("/fietsen/archiveren/<int:itemnr>")
+@rol_required(["depotmedewerker", "financieel"])
+def fiets_archiveren(itemnr):
+    fiets = Item.query.get_or_404(itemnr)
+    fiets.status = StatusEnum.GEARCHIVEERD
+    db.session.commit()
+    return redirect("/fietsen")
+
 # ---------------------- ALGORITHME ----------------------
 @main.get("/api/fietsen-advies/<int:kind_id>")
 @rol_required(["depotmedewerker", "financieel"])
@@ -237,9 +246,7 @@ def api_lopende_verhuur(kind_id):
         kind_id=kind_id,
         status=VerhuurStatusEnum.ACTIEF.value
     ).count()
-
     return {"aantal": aantal}
-
 
 # ---------------------- VERHUUR ----------------------
 @main.route("/verhuur")
@@ -310,7 +317,6 @@ def verhuur_beeindigen(verhuur_id):
     db.session.commit()
     return redirect("/verhuur")
 
-
 @main.post("/verhuur/verleng/<int:verhuur_id>")
 @rol_required(["depotmedewerker", "financieel"])
 def verhuur_verleng(verhuur_id):
@@ -345,7 +351,6 @@ def verhuur_verleng(verhuur_id):
 
     flash(f"Verhuur {verhuur_id} verlengd tot {nieuwe_einddatum}.", "success")
     return redirect("/verhuur")
-
 
 # ---------------------- FINANCIEEL ----------------------
 @main.route("/financieel")
