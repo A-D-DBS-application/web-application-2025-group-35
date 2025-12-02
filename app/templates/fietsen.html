@@ -3,7 +3,6 @@
 
 {% block main_content %}
 
-
 <h1>Fietsen</h1>
 <p class="count-text">Aantal fietsen: {{ fietsen|length }}</p>
 <p class="count-text">Aantal beschikbare fietsen: {{ beschikbare_fietsen }}</p>
@@ -58,9 +57,27 @@
   </tbody>
 </table>
 
+<style>
+/* Archiveren-knop stijl */
+.archive-btn {
+    background-color: #ddd6d4; /* rood */
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 5px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.archive-btn:hover {
+    background-color: #ddd6d4;
+    transform: scale(1.05);
+}
+</style>
+
 {% endblock %}
-
-
 
 {% block popup %}
 
@@ -99,7 +116,6 @@
   </form>
 </div>
 
-
 <!-- ================= EDIT POPUP ================= -->
 <div id="edit-popup" class="popup-overlay">
   <form id="edit-form" class="popup" method="POST">
@@ -134,7 +150,6 @@
 
   </form>
 </div>
-
 
 {% raw %}
 <script>
