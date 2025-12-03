@@ -60,6 +60,7 @@
           data-kind-ids="{{ v.kinderen|map(attribute='kind_id')|join('||') }}"
           data-kind-namen="{{ v.kinderen|map(attribute='naam')|join('||') }}"
           data-kind-datums="{{ v.kinderen|map(attribute='geboortedatum')|join('||') }}"
+          data-kind-heeft-betalingen="{{ v.kinderen|map(attribute='heeft_betalingen')|map('string')|join('||') }}"
           onclick="openEditPopup(this)"
         >
           Bewerken
@@ -73,6 +74,14 @@
 {% endblock %}
 
 {% block popup %}
+
+<!-- KLEINE ERROR POPUP -->
+<div id="small-error-popup" class="popup-overlay" style="display:none; z-index:9999;">
+  <div class="popup" style="max-width: 400px; text-align:center; padding:15px;">
+    <p id="small-error-message" style="margin:0; font-weight:bold; color:red;"></p>
+    <button type="button" class="cancel-btn" onclick="closeSmallErrorPopup()" style="margin-top:10px;">Sluiten</button>
+  </div>
+</div>
 
 <!-- KLANT TOEVOEGEN -->
 <div id="add-popup" class="popup-overlay">
@@ -168,21 +177,41 @@
   </form>
 </div>
 
+<!-- ERROR POPUP BOVEN EDIT POPUP -->
+<div id="error-popup" class="popup-overlay" style="display:none; z-index:9999;">
+  <div class="popup">
+    <h3>Fout</h3>
+    <p id="error-message"></p>
+    <div class="popup-buttons">
+      <button type="button" class="cancel-btn" onclick="closeErrorPopup()">Sluiten</button>
+    </div>
+  </div>
+</div>
+
 <script>
-function filterKlanten() {
-  const q = document.getElementById("search").value.toLowerCase();
-  document.querySelectorAll("#klanten-body tr").forEach(row => {
-    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none";
-  });
+// Toon error-popup
+function showErrorPopup(message) {
+  const popup = document.getElementById("error-popup");
+  const msg = document.getElementById("error-message");
+  msg.textContent = message;
+  popup.style.display = "flex";
 }
 
-function addChildRow(containerId, naam = "", datum = "", id = "") {
+// Sluit error-popup
+function closeErrorPopup() {
+  document.getElementById("error-popup").style.display = "none";
+}
+
+// Voeg kind-rij toe (bewerken)
+function addChildRow(containerId, naam = "", datum = "", id = "", canDelete = true) {
   const container = document.getElementById(containerId);
 
   const row = document.createElement("div");
   row.className = "child-row";
   row.style.display = "flex";
   row.style.marginTop = "6px";
+  row.dataset.id = id;
+  row.dataset.canDelete = canDelete;
 
   const nameInput = document.createElement("input");
   nameInput.type = "text";
@@ -199,7 +228,6 @@ function addChildRow(containerId, naam = "", datum = "", id = "") {
   dateInput.required = true;
   dateInput.style.marginLeft = "6px";
 
-  // hidden input voor kind_id
   const idInput = document.createElement("input");
   idInput.type = "hidden";
   idInput.name = "kind_ids[]";
@@ -210,7 +238,14 @@ function addChildRow(containerId, naam = "", datum = "", id = "") {
   removeBtn.textContent = "✖";
   removeBtn.className = "remove-kind";
   removeBtn.style.marginLeft = "6px";
-  removeBtn.onclick = () => row.remove();
+
+  removeBtn.onclick = () => {
+    if (id && canDelete === false) {
+      showErrorPopup("Dit kind kan niet verwijderd worden omdat er betalingen zijn.");
+    } else {
+      row.remove();
+    }
+  };
 
   row.appendChild(nameInput);
   row.appendChild(dateInput);
@@ -219,7 +254,6 @@ function addChildRow(containerId, naam = "", datum = "", id = "") {
 
   container.appendChild(row);
 }
-
 function openAddPopup() {
   const container = document.getElementById("add-children-container");
   container.innerHTML = "";
@@ -231,8 +265,7 @@ function openAddPopup() {
 function closeAddPopup() {
   document.getElementById("add-popup").style.display = "none";
 }
-
-
+// Open bewerk-popup
 function openEditPopup(btn) {
   const container = document.getElementById("edit-children-container");
   container.innerHTML = "";
@@ -241,6 +274,7 @@ function openEditPopup(btn) {
   const ids = (btn.dataset.kindIds || "").split("||");
   const namen = (btn.dataset.kindNamen || "").split("||");
   const datums = (btn.dataset.kindDatums || "").split("||");
+  const heeftBetalingen = (btn.dataset.kindHeeftBetalingen || "").split("||");
 
   document.getElementById("edit-voornaam").value = btn.dataset.voornaam;
   document.getElementById("edit-achternaam").value = btn.dataset.achternaam;
@@ -253,15 +287,25 @@ function openEditPopup(btn) {
   document.getElementById("edit-land").value = btn.dataset.land;
 
   if (namen.length === 1 && namen[0] === "") {
-    addChildRow("edit-children-container");
-  } else {
-    namen.forEach((naam, idx) => addChildRow("edit-children-container", naam, datums[idx], ids[idx]));
-  }
+        addChildRow("edit-children-container");
+    } else {
+        namen.forEach((naam, idx) => {
+    // Kan verwijderen, TENZIJ de betalingsstatus "True" is
+    const heeftBetaald = heeftBetalingen[idx] === "True";
+
+    // De inverse: canDelete is True als er NIET betaald is
+    const canDelete = !heeftBetaald; 
+    
+    // Stuur de berekende canDelete status mee naar de rij
+    addChildRow("edit-children-container", naam, datums[idx], ids[idx], canDelete);
+});
+    }
 
   document.getElementById("edit-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("edit-popup").style.display = "flex";
 }
 
+// Sluit edit-popup
 function closeEditPopup() {
   document.getElementById("edit-popup").style.display = "none";
 }

@@ -162,12 +162,3 @@ class Verhuur(db.Model):
     item = db.relationship("Item")
     kind = db.relationship("Kind")
     # ❌ verwijderd: verantwoordelijke = db.relationship("Verantwoordelijke")
-
-
-
-
-
-
-
-
-
