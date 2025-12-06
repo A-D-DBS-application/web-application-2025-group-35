@@ -3,79 +3,65 @@
 
 {% block main_content %}
 
-<h1>Fietsen</h1>
-<p class="count-text">Aantal fietsen: {{ fietsen|length }}</p>
-<p class="count-text">Aantal beschikbare fietsen: {{ beschikbare_fietsen }}</p>
+<h1 class="mb-3">Fietsen</h1>
 
-<button class="add-button" onclick="openAddPopup()" style="margin-bottom: 15px;">
-    Nieuwe fiets
-</button>
+<p class="mb-1 fw-bold">Aantal fietsen: {{ fietsen|length }}</p>
+<p class="mb-3 fw-bold">Aantal beschikbare fietsen: {{ beschikbare_fietsen }}</p>
 
-<div class="search-bar">
-    <input type="text" id="search" placeholder="Zoek fiets..." onkeyup="filterFietsen()">
+<button class="btn-add mb-3" onclick="openAddPopup()">Nieuwe fiets</button>
+
+<div class="mb-3">
+    <input type="text" id="search" class="form-control" placeholder="Zoek fiets..." onkeyup="filterFietsen()">
 </div>
 
-<table id="fietsen-table">
-  <thead>
-    <tr>
-      <th>Itemnr</th>
-      <th>Merk</th>
-      <th>Model</th>
-      <th>Status</th>
-      <th>Leeftijdscategorie</th>
-      <th>Bewerken</th>
-    </tr>
-  </thead>
-  <tbody id="fietsen-body">
-    {% for f in fietsen %}
-    <tr>
-      <td>{{ "%05d" % f.itemnr }}</td>
-      <td>{{ f.merk }}</td>
-      <td>{{ f.model }}</td>
-      <td class="status-{{ f.status.name | lower }}">
-          {{ f.status.value }}
-      </td>
-      <td>{{ f.leeftijdscategorie.value if f.leeftijdscategorie else "-" }}</td>
+<table id="fietsen-table" class="table table-striped table-bordered bg-white">
+    <thead class="table-light">
+        <tr>
+            <th>Itemnr</th>
+            <th>Merk</th>
+            <th>Model</th>
+            <th>Status</th>
+            <th>Leeftijdscategorie</th>
+            <th>Bewerken</th>
+        </tr>
+    </thead>
 
-      <td>
-        <button class="edit-btn"
-          data-itemnr="{{ f.itemnr }}"
-          data-merk="{{ f.merk }}"
-          data-model="{{ f.model }}"
-          data-status="{{ f.status.name }}"
-          data-leeftijd="{{ f.leeftijdscategorie.name if f.leeftijdscategorie else '' }}"
-          onclick="openEditPopup(this)">
-          ✏️ Bewerken
-        </button>
+    <tbody id="fietsen-body">
+        {% for f in fietsen %}
+        <tr>
+            <td>{{ "%05d" % f.itemnr }}</td>
+            <td>{{ f.merk }}</td>
+            <td>{{ f.model }}</td>
 
-        <form method="POST" action="/fietsen/archiveren/{{ f.itemnr }}" style="display:inline;" onsubmit="return confirm('Weet je zeker dat je deze fiets wilt archiveren?');">
-          <button type="submit" class="archive-btn">🗑️ Archiveren</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
+            <!-- FIXED CLASS-GENERATOR -->
+            <td class="status-{{ f.status.value | lower | replace(' ', '_') }}">
+                {{ f.status.value }}
+            </td>
+
+            <td>{{ f.leeftijdscategorie.value if f.leeftijdscategorie else "-" }}</td>
+
+            <td>
+                <button class="btn-edit"
+                    data-itemnr="{{ f.itemnr }}"
+                    data-merk="{{ f.merk }}"
+                    data-model="{{ f.model }}"
+                    data-status="{{ f.status.name }}"
+                    data-leeftijd="{{ f.leeftijdscategorie.name if f.leeftijdscategorie else '' }}"
+                    onclick="openEditPopup(this)">
+                    ✏️ Bewerken
+                </button>
+
+                <form method="POST"
+                      action="/fietsen/archiveren/{{ f.itemnr }}"
+                      class="d-inline"
+                      onsubmit="return confirm('Weet je zeker dat je deze fiets wilt archiveren?');">
+                    <button type="submit" class="btn-archive">🗑️ Archiveren</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-
-<style>
-/* Archiveren-knop stijl */
-.archive-btn {
-    background-color: #ddd6d4; /* rood */
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9em;
-    margin-left: 5px;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.archive-btn:hover {
-    background-color: #ddd6d4;
-    transform: scale(1.05);
-}
-</style>
 
 {% endblock %}
 
@@ -83,75 +69,74 @@
 
 <!-- ================= ADD POPUP ================= -->
 <div id="add-popup" class="popup-overlay">
-  <form class="popup" method="POST" action="/fietsen/toevoegen">
+    <form class="popup-box" method="POST" action="/fietsen/toevoegen">
 
-    <h3>Nieuwe fiets toevoegen</h3>
+        <h3 class="mb-3">Nieuwe fiets toevoegen</h3>
 
-    <label>Merk:</label>
-    <input type="text" name="merk" required>
+        <label class="form-label">Merk</label>
+        <input type="text" name="merk" class="form-control mb-3" required>
 
-    <label>Model:</label>
-    <input type="text" name="model" required>
+        <label class="form-label">Model</label>
+        <input type="text" name="model" class="form-control mb-3" required>
 
-    <label>Status:</label>
-    <select name="status" required>
-      {% for s in StatusEnum %}
-      <option value="{{ s.name }}">{{ s.value }}</option>
-      {% endfor %}
-    </select>
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select mb-3" required>
+            {% for s in StatusEnum %}
+            <option value="{{ s.name }}">{{ s.value }}</option>
+            {% endfor %}
+        </select>
 
-    <label>Leeftijdscategorie:</label>
-    <select name="leeftijd">
-      <option value="">(geen)</option>
-      {% for l in LeeftijdEnum %}
-      <option value="{{ l.name }}">{{ l.value }}</option>
-      {% endfor %}
-    </select>
+        <label class="form-label">Leeftijdscategorie</label>
+        <select name="leeftijd" class="form-select mb-4">
+            <option value="">(geen)</option>
+            {% for l in LeeftijdEnum %}
+            <option value="{{ l.name }}">{{ l.value }}</option>
+            {% endfor %}
+        </select>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeAddPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
-    </div>
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn-cancel" onclick="closeAddPopup()">Annuleren</button>
+            <button type="submit" class="btn-save">Opslaan</button>
+        </div>
 
-  </form>
+    </form>
 </div>
 
 <!-- ================= EDIT POPUP ================= -->
 <div id="edit-popup" class="popup-overlay">
-  <form id="edit-form" class="popup" method="POST">
+    <form id="edit-form" class="popup-box" method="POST">
 
-    <h3>Fiets bewerken</h3>
+        <h3 class="mb-3">Fiets bewerken</h3>
 
-    <label>Merk:</label>
-    <input type="text" name="merk" id="edit-merk" required>
+        <label class="form-label">Merk</label>
+        <input type="text" name="merk" id="edit-merk" class="form-control mb-3" required>
 
-    <label>Model:</label>
-    <input type="text" name="model" id="edit-model" required>
+        <label class="form-label">Model</label>
+        <input type="text" name="model" id="edit-model" class="form-control mb-3" required>
 
-    <label>Status:</label>
-    <select name="status" id="edit-status">
-      {% for s in StatusEnum %}
-      <option value="{{ s.name }}">{{ s.value }}</option>
-      {% endfor %}
-    </select>
+        <label class="form-label">Status</label>
+        <select name="status" id="edit-status" class="form-select mb-3">
+            {% for s in StatusEnum %}
+            <option value="{{ s.name }}">{{ s.value }}</option>
+            {% endfor %}
+        </select>
 
-    <label>Leeftijdscategorie:</label>
-    <select name="leeftijd" id="edit-leeftijd">
-      <option value="">(geen)</option>
-      {% for l in LeeftijdEnum %}
-      <option value="{{ l.name }}">{{ l.value }}</option>
-      {% endfor %}
-    </select>
+        <label class="form-label">Leeftijdscategorie</label>
+        <select name="leeftijd" id="edit-leeftijd" class="form-select mb-4">
+            <option value="">(geen)</option>
+            {% for l in LeeftijdEnum %}
+            <option value="{{ l.name }}">{{ l.value }}</option>
+            {% endfor %}
+        </select>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeEditPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
-    </div>
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn-cancel" onclick="closeEditPopup()">Annuleren</button>
+            <button type="submit" class="btn-save">Opslaan</button>
+        </div>
 
-  </form>
+    </form>
 </div>
 
-{% raw %}
 <script>
 function filterFietsen() {
   const q = document.getElementById("search").value.toLowerCase();
@@ -174,7 +159,7 @@ function openEditPopup(btn) {
   document.getElementById("edit-leeftijd").value = btn.dataset.leeftijd || "";
 
   document.getElementById("edit-form").action =
-    `/fietsen/bewerken/${btn.dataset.itemnr}`;
+      `/fietsen/bewerken/${btn.dataset.itemnr}`;
 
   document.getElementById("edit-popup").style.display = "flex";
 }
@@ -182,6 +167,5 @@ function closeEditPopup() {
   document.getElementById("edit-popup").style.display = "none";
 }
 </script>
-{% endraw %}
 
 {% endblock %}

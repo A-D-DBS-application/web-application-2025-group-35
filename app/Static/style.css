@@ -1,0 +1,333 @@
+/* -----------------------------------
+   ALGEMENE LAYOUT
+----------------------------------- */
+
+body {
+    background: #f4f4f4;
+    font-family: Arial, sans-serif;
+}
+
+/* -----------------------------------
+   SIDEBAR
+----------------------------------- */
+
+.sidebar {
+    width: 230px;
+    min-height: 100vh;
+    background: #1e293b;
+    color: white;
+    padding: 25px 20px;
+}
+
+.sidebar-title {
+    font-size: 1.3rem;
+    margin-bottom: 1.4rem;
+}
+
+.nav-item {
+    display: block;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+}
+
+.nav-item:hover {
+    background: #334155;
+}
+
+/* -----------------------------------
+   MAIN CONTENT
+----------------------------------- */
+
+.main-content {
+    padding: 30px;
+    flex: 1;
+}
+
+/* -----------------------------------
+   BUTTONS
+----------------------------------- */
+
+.btn-add, .btn-save, .btn-cancel, .btn-edit {
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Voeg-knop */
+.btn-add {
+    background: #2563eb;
+    color: white;
+}
+.btn-add:hover {
+    background: #1d4ed8;
+}
+
+/* Opslaan */
+.btn-save {
+    background: #16a34a;
+    color: white;
+}
+.btn-save:hover {
+    background: #15803d;
+}
+
+/* Annuleren */
+.btn-cancel {
+    background: #dc2626;
+    color: white;
+}
+.btn-cancel:hover {
+    background: #b91c1c;
+}
+
+/* Bewerken */
+.btn-edit {
+    background: #fb923c;
+    color: white;
+}
+.btn-edit:hover {
+    background: #f97316;
+}
+
+/* Archive button */
+.btn-archive {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+.btn-archive:hover {
+    background: #4b5563;
+}
+
+/* -----------------------------------
+   POPUPS
+----------------------------------- */
+
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: rgba(0,0,0,0.55);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 10000;
+}
+
+.popup-box {
+    background: white;
+    padding: 22px;
+    width: 420px;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 10px;
+}
+
+/* -----------------------------------
+   TABLES
+----------------------------------- */
+
+table {
+    width: 100%;
+}
+
+table th {
+    background: #e2e8f0;
+}
+
+td.status-beschikbaar {
+    color: #0c7a00 !important;
+    font-weight: bold;
+}
+
+td.status-uitgeleend {
+    color: #c40000 !important;
+    font-weight: bold;
+}
+
+td.status-op_onderhoud {
+    color: #d98600 !important;
+    font-weight: bold;
+}
+
+td.status-gearchiveerd {
+    color: #6b7280 !important;
+    font-weight: bold;
+}
+/* -----------------------------------
+   FORM ELEMENTS
+----------------------------------- */
+
+input, select, textarea {
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+/* Child row */
+.child-row input {
+    flex: 1;
+}
+
+/* Remove-kind button */
+.remove-kind {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 0 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.remove-kind:hover {
+    background: #b91c1c;
+}
+
+/* -----------------------------------
+   BETALING STATUS
+----------------------------------- */
+
+.betaling-status {
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+}
+
+.betaling-status.contant,
+.betaling-status.kaart,
+.betaling-status.overschrijven_voldaan {
+    background-color: #16a34a;
+}
+
+.betaling-status.overschrijven_niet_voldaan {
+    background-color: #dc2626;
+}
+
+/* -----------------------------------
+   VERHUUR STATUS
+----------------------------------- */
+
+.verhuur-status {
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+}
+
+.verhuur-actief {
+    background: #16a34a;
+}
+
+.verhuur-beëindigd,
+.verhuur-beeindigd {
+    background: #dc2626;
+}
+
+/* -----------------------------------
+   LINK BUTTON
+----------------------------------- */
+
+.link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #2563eb;
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+}
+
+/* -----------------------------------
+   LOGIN PAGE
+----------------------------------- */
+
+.login-box {
+    max-width: 420px;
+}
+
+.btn-login {
+    background: #334155;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+.btn-login:hover {
+    background: #1e293b;
+}
+
+/* -----------------------------------
+   VOORSPELLING PAGINA
+----------------------------------- */
+
+.voorspelling-legenda {
+    font-size: 14px;
+}
+
+.legenda-kleur {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin-right: 6px;
+    border-radius: 4px;
+}
+
+.legenda-kleur.groen {
+    background: rgba(22, 163, 52, 0.85);
+}
+
+.legenda-kleur.oranje {
+    background: rgba(234, 179, 8, 0.85);
+}
+
+.legenda-kleur.rood {
+    background: rgba(220, 38, 38, 0.85);
+}
+
+.chart-container {
+    max-width: 700px;
+    height: 400px;
+}
+
+/* -----------------------------------
+   RESPONSIVE (iPad)
+----------------------------------- */
+
+@media (max-width: 992px) {
+    .sidebar {
+        width: 180px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+    }
+}

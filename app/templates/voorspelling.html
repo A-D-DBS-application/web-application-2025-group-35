@@ -2,27 +2,26 @@
 {% set title = "Voorspelling - Bike Lending Portaal" %}
 
 {% block main_content %}
-<h1 style="margin-bottom: 10px;">Voorspelling toekomstige vraag</h1>
+
+<h1 class="mb-2">Voorspelling toekomstige vraag</h1>
 <p>Dit algoritme voorspelt de drukte per leeftijdscategorie, gebaseerd op lopende verhuren.</p>
 <p><em>Voorspelling voor de komende 6 maanden</em></p>
 
-<!-- 📌 LEGENDE -->
-<div style="margin-top: 15px; margin-bottom: 10px; font-size: 14px;">
+<!-- LEGENDE -->
+<div class="voorspelling-legenda mt-3 mb-3">
     <strong>Legenda:</strong><br>
-    <span style="display:inline-block; width:15px; height:15px; background:rgba(22,163,52,0.85); margin-right:6px;"></span>
-    Lage voorspelde drukte (groen)<br>
-    <span style="display:inline-block; width:15px; height:15px; background:rgba(234,179,8,0.85); margin-right:6px;"></span>
-    Gemiddelde voorspelde drukte (oranje)<br>
-    <span style="display:inline-block; width:15px; height:15px; background:rgba(220,38,38,0.85); margin-right:6px;"></span>
-    Hoge voorspelde drukte (rood)
+    <span class="legenda-kleur groen"></span> Lage voorspelde drukte (groen)<br>
+    <span class="legenda-kleur oranje"></span> Gemiddelde voorspelde drukte (oranje)<br>
+    <span class="legenda-kleur rood"></span> Hoge voorspelde drukte (rood)
 </div>
 
-<!-- 📊 GRAFIEK -->
-<div style="max-width: 700px; height: 400px; margin-top: 15px;">
+<!-- GRAFIEK -->
+<div class="chart-container">
     <canvas id="vraagChart"></canvas>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
   const voorspellingData = JSON.parse(`{{ voorspelling | tojson | safe }}`);
 
@@ -36,20 +35,16 @@
   ];
 
   const data = labels.map(label => voorspellingData[label] || 0);
-
   const maxAantal = Math.max(...data, 1);
 
-  // 🎨 Kleurcode dynamisch
   const kleuren = data.map(aantal => {
-    const ratio = aantal / maxAantal;
-    if (ratio > 0.66) return 'rgba(220, 38, 38, 0.85)';     // rood
-    if (ratio > 0.33) return 'rgba(234, 179, 8, 0.85)';     // oranje
-    return 'rgba(22, 163, 52, 0.85)';                       // groen
+    const r = aantal / maxAantal;
+    if (r > 0.66) return 'rgba(220, 38, 38, 0.85)';
+    if (r > 0.33) return 'rgba(234, 179, 8, 0.85)';
+    return 'rgba(22, 163, 52, 0.85)';
   });
 
-  const ctx = document.getElementById('vraagChart').getContext('2d');
-
-  new Chart(ctx, {
+  new Chart(document.getElementById('vraagChart'), {
     type: 'bar',
     data: {
       labels,
@@ -57,7 +52,7 @@
         label: 'Voorspelde vrijgekomen fietsen binnen 6 maanden',
         data,
         backgroundColor: kleuren,
-        borderColor: 'rgba(0,0,0,0.25)',
+        borderColor: 'rgba(0,0,0,0.2)',
         borderWidth: 1,
         borderRadius: 6
       }]
@@ -66,16 +61,14 @@
       responsive: true,
       plugins: {
         legend: { display: false },
-
         title: {
           display: true,
           text: 'Voorspelde drukte per leeftijdscategorie',
           font: { size: 18 }
         },
-
         tooltip: {
           callbacks: {
-            label: context => `${context.parsed.y} verhuur verwacht`
+            label: ctx => `${ctx.parsed.y} verhuur verwacht`
           }
         }
       },

@@ -1,21 +1,25 @@
 {% extends "index.html" %}
 
 {% block main_content %}
-<h1>Nieuwe Fiets Toevoegen</h1>
+<h1 class="mb-4">Nieuwe Fiets Toevoegen</h1>
 
-<form action="/fietsen/toevoegen" method="POST">
-    <label>Itemnummer:</label>
-    <input type="number" name="itemnr" required>
+<form action="/fietsen/toevoegen" method="POST" class="p-3 bg-white rounded shadow-sm" style="max-width: 500px;">
+    
+    <!-- Itemnummer -->
+    <label class="form-label">Itemnummer</label>
+    <input type="number" name="itemnr" class="form-control mb-3" required>
 
-    <label>Status:</label>
-    <select name="status">
+    <!-- Status -->
+    <label class="form-label">Status</label>
+    <select name="status" class="form-select mb-3">
         <option value="BESCHIKBAAR">Beschikbaar</option>
         <option value="VERHUURD">Verhuurd</option>
         <option value="ONDERHOUD">Onderhoud</option>
     </select>
 
-    <label>Leeftijdscategorie:</label>
-    <select name="leeftijdscategorie">
+    <!-- Leeftijdscategorie -->
+    <label class="form-label">Leeftijdscategorie</label>
+    <select name="leeftijdscategorie" class="form-select mb-4">
         <option value="LOOPFIESTEN">1–4 jaar</option>
         <option value="PEUTER">2–3 jaar</option>
         <option value="KLEUTER">4–6 jaar</option>
@@ -25,6 +29,7 @@
         <option value="OUDER_DAN_16">Ouder dan 16 jaar</option>
     </select>
 
-    <button type="submit">Opslaan</button>
+    <!-- Submit -->
+    <button type="submit" class="btn-save">Opslaan</button>
 </form>
 {% endblock %}

@@ -3,14 +3,15 @@
 
 {% block main_content %}
 
-<h1>Financieel</h1>
-<p class="count-text">Totaal betalingen: {{ betalingen|length }}</p>
-<p class="count-text">Betaling niet voltooid: {{ niet_voltooid }}</p>
+<h1 class="mb-4">Financieel</h1>
 
-<button class="add-button" onclick="openAddBetalingPopup()"> Nieuwe betaling</button>
+<p class="fw-bold mb-1">Totaal betalingen: {{ betalingen|length }}</p>
+<p class="fw-bold mb-3">Betaling niet voltooid: {{ niet_voltooid }}</p>
 
-<table>
-  <thead>
+<button class="btn-add mb-3" onclick="openAddBetalingPopup()">Nieuwe betaling</button>
+
+<table class="table table-bordered table-striped bg-white">
+  <thead class="table-light">
     <tr>
       <th>Betaling ID</th>
       <th>Klant</th>
@@ -22,12 +23,14 @@
       <th>Actie</th>
     </tr>
   </thead>
+
   <tbody>
     {% for b in betalingen %}
     <tr>
       <td>{{ "%05d" % b.id }}</td>
+
       <!-- KLANT -->
-      <td class="klant-cell">
+      <td class="text-start">
         {% if b.kind and b.kind.verantwoordelijke %}
         <button
           type="button"
@@ -66,16 +69,18 @@
       </td>
 
       <td>{{ "%.2f"|format(b.bedrag) }}</td>
+
       <td>
-          <span class="betaling-status {{ b.betalingswijze.name | lower }}">
-           {{ b.betalingswijze.value }}
-          </span>
+        <span class="betaling-status {{ b.betalingswijze.name | lower }}">
+          {{ b.betalingswijze.value }}
+        </span>
       </td>
+
       <td>{{ b.datum.strftime('%d-%m-%Y') }}</td>
 
-      <!-- BEWERKEN -->
+      <!-- ACTIE -->
       <td>
-        <button class="edit-btn"
+        <button class="btn-edit"
           onclick="openEditBetalingPopup(
             `{{ b.id }}`,
             `{{ b.itemnr }}`,
@@ -98,11 +103,11 @@
 
 <!-- ================== ADD BETALING ================== -->
 <div id="add-betaling-popup" class="popup-overlay">
-  <form class="popup" method="POST" action="/financieel/toevoegen">
-    <h3>Nieuwe betaling</h3>
+  <form class="popup-box" method="POST" action="/financieel/toevoegen">
+    <h3 class="mb-3">Nieuwe betaling</h3>
 
-    <label>Klant:</label>
-    <select id="betaling-klant-select" onchange="updateKinderList()" required>
+    <label class="form-label">Klant</label>
+    <select id="betaling-klant-select" class="form-select mb-3" onchange="updateKinderList()" required>
       <option value="">-- Kies een klant --</option>
       {% for v in verantwoordelijken %}
       <option value="{{ v.verantwoordelijke_id }}">
@@ -111,13 +116,13 @@
       {% endfor %}
     </select>
 
-    <label>Kind:</label>
-    <select name="kind_id" id="betaling-kind-select" required>
+    <label class="form-label">Kind</label>
+    <select name="kind_id" id="betaling-kind-select" class="form-select mb-3" required>
       <option value="">-- Kies een kind --</option>
     </select>
 
-    <label>Fiets:</label>
-    <select name="itemnr" id="betaling-item-select" required>
+    <label class="form-label">Fiets</label>
+    <select name="itemnr" id="betaling-item-select" class="form-select mb-3" required>
       {% for f in fietsen %}
       <option value="{{ f.itemnr }}">
         {{ "%05d" % f.itemnr }} – {{ f.merk }} {{ f.model }}
@@ -125,33 +130,34 @@
       {% endfor %}
     </select>
 
-    <label>Betalingswijze:</label>
-    <select name="betalingswijze" required>
+    <label class="form-label">Betalingswijze</label>
+    <select name="betalingswijze" class="form-select mb-3" required>
       {% for b in BetalingswijzeEnum %}
       <option value="{{ b.name }}">{{ b.value }}</option>
       {% endfor %}
     </select>
 
-    <label>Bedrag (€):</label>
-    <input type="number" name="bedrag" step="0.01" required>
+    <label class="form-label">Bedrag (€)</label>
+    <input type="number" name="bedrag" step="0.01" class="form-control mb-3" required>
 
-    <label>Datum:</label>
-    <input type="date" name="datum" required>
+    <label class="form-label">Datum</label>
+    <input type="date" name="datum" class="form-control mb-4" required>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeAddBetalingPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeAddBetalingPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
+
   </form>
 </div>
 
 <!-- ================== EDIT BETALING ================== -->
 <div id="edit-betaling-popup" class="popup-overlay">
-  <form id="edit-betaling-form" class="popup" method="POST">
-    <h3>Betaling bewerken</h3>
+  <form id="edit-betaling-form" class="popup-box" method="POST">
+    <h3 class="mb-3">Betaling bewerken</h3>
 
-    <label>Klant:</label>
-    <select id="edit-betaling-klant-select" onchange="editUpdateKinderList()" required>
+    <label class="form-label">Klant</label>
+    <select id="edit-betaling-klant-select" class="form-select mb-3" onchange="editUpdateKinderList()" required>
       <option value="">-- Kies een klant --</option>
       {% for v in verantwoordelijken %}
       <option value="{{ v.verantwoordelijke_id }}">
@@ -160,13 +166,11 @@
       {% endfor %}
     </select>
 
-    <label>Kind:</label>
-    <select name="kind_id" id="edit-betaling-kind-select" required>
-      <option value="">-- Kies een kind --</option>
-    </select>
+    <label class="form-label">Kind</label>
+    <select name="kind_id" id="edit-betaling-kind-select" class="form-select mb-3" required></select>
 
-    <label>Fiets:</label>
-    <select name="itemnr" id="edit-betaling-item-select" required>
+    <label class="form-label">Fiets</label>
+    <select name="itemnr" id="edit-betaling-item-select" class="form-select mb-3" required>
       {% for f in fietsen %}
       <option value="{{ f.itemnr }}">
         {{ "%05d" % f.itemnr }} – {{ f.merk }} {{ f.model }}
@@ -174,72 +178,77 @@
       {% endfor %}
     </select>
 
-    <label>Betalingswijze:</label>
-    <select name="betalingswijze" id="edit-betalingwijze" required>
+    <label class="form-label">Betalingswijze</label>
+    <select name="betalingswijze" id="edit-betalingwijze" class="form-select mb-3" required>
       {% for b in BetalingswijzeEnum %}
       <option value="{{ b.name }}">{{ b.value }}</option>
       {% endfor %}
     </select>
 
-    <label>Bedrag (€):</label>
-    <input type="number" name="bedrag" id="edit-betaling-bedrag" step="0.01" required>
+    <label class="form-label">Bedrag (€)</label>
+    <input type="number" name="bedrag" id="edit-betaling-bedrag" step="0.01" class="form-control mb-3" required>
 
-    <label>Datum:</label>
-    <input type="date" name="datum" id="edit-betaling-datum" required>
+    <label class="form-label">Datum</label>
+    <input type="date" name="datum" id="edit-betaling-datum" class="form-control mb-4" required>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeEditBetalingPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeEditBetalingPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
+
   </form>
 </div>
 
 <!-- ================== KLANT POPUP ================== -->
 <div id="klant-popup" class="popup-overlay">
-  <form id="klant-form" class="popup" method="POST">
-    <h3>Klantgegevens</h3>
+  <form id="klant-form" class="popup-box" method="POST">
+    <h3 class="mb-3">Klantgegevens</h3>
 
-    <label>Voornaam:</label>
-    <input type="text" name="voornaam" id="klant-voornaam" required>
+    <label class="form-label">Voornaam</label>
+    <input type="text" name="voornaam" id="klant-voornaam" class="form-control mb-2" required>
 
-    <label>Achternaam:</label>
-    <input type="text" name="achternaam" id="klant-achternaam" required>
+    <label class="form-label">Achternaam</label>
+    <input type="text" name="achternaam" id="klant-achternaam" class="form-control mb-2" required>
 
-    <label>Email:</label>
-    <input type="email" name="email" id="klant-email" required>
+    <label class="form-label">Email</label>
+    <input type="email" name="email" id="klant-email" class="form-control mb-2" required>
 
-    <label>Straat:</label>
-    <input type="text" name="straat" id="klant-straat" required>
+    <label class="form-label">Straat</label>
+    <input type="text" name="straat" id="klant-straat" class="form-control mb-2" required>
 
-    <label>Huisnummer:</label>
-    <input type="text" name="huisnummer" id="klant-huisnummer" required>
+    <label class="form-label">Huisnummer</label>
+    <input type="text" name="huisnummer" id="klant-huisnummer" class="form-control mb-2" required>
 
-    <label>Postcode:</label>
-    <input type="number" name="postcode" id="klant-postcode" required>
+    <label class="form-label">Postcode</label>
+    <input type="number" name="postcode" id="klant-postcode" class="form-control mb-2" required>
 
-    <label>Gemeente:</label>
-    <input type="text" name="gemeente" id="klant-gemeente" required>
+    <label class="form-label">Gemeente</label>
+    <input type="text" name="gemeente" id="klant-gemeente" class="form-control mb-2" required>
 
-    <label>Land:</label>
-    <input type="text" name="land" id="klant-land" required>
+    <label class="form-label">Land</label>
+    <input type="text" name="land" id="klant-land" class="form-control mb-3" required>
 
     <hr>
 
-    <label>Kinderen:</label>
-    <div id="klant-children-container"></div>
-    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">
+    <label class="form-label">Kinderen</label>
+    <div id="klant-children-container" class="mb-2"></div>
+
+    <button type="button" class="btn-add mb-3" onclick="addChildRow('klant-children-container')">
       Kind toevoegen
     </button>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeKlantPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
+
   </form>
 </div>
 
-<!-- ================== SCRIPTS ================== -->
+<!-- SCRIPTS (ongewijzigd behalve correcte styling) -->
 <script>
+/* ———————————  EXACT dezelfde JS als jouw originele ——————————— */
+
 const KIND_DATA = JSON.parse(`{{ klant_kind_data | tojson | safe }}`);
 
 // ADD BETALING
@@ -264,10 +273,11 @@ const KIND_DATA_REVERSE = {};
 Object.entries(KIND_DATA).forEach(([klantId, children]) => {
   children.forEach(c => { KIND_DATA_REVERSE[c.id] = klantId; });
 });
+
 function openEditBetalingPopup(id, itemnr, kind_id, betalingswijze, datum, bedrag) {
-  const popup = document.getElementById("edit-betaling-popup");
   const form = document.getElementById("edit-betaling-form");
   form.action = `/financieel/bewerken/${id}`;
+  
   document.getElementById("edit-betaling-klant-select").value = KIND_DATA_REVERSE[kind_id] || "";
   editUpdateKinderList();
   document.getElementById("edit-betaling-kind-select").value = kind_id;
@@ -275,9 +285,12 @@ function openEditBetalingPopup(id, itemnr, kind_id, betalingswijze, datum, bedra
   document.getElementById("edit-betalingwijze").value = betalingswijze;
   document.getElementById("edit-betaling-bedrag").value = bedrag;
   document.getElementById("edit-betaling-datum").value = datum;
-  popup.style.display = "flex";
+
+  document.getElementById("edit-betaling-popup").style.display = "flex";
 }
+
 function closeEditBetalingPopup() { document.getElementById("edit-betaling-popup").style.display = "none"; }
+
 function editUpdateKinderList() {
   const klantId = document.getElementById("edit-betaling-klant-select").value;
   const kindSelect = document.getElementById("edit-betaling-kind-select");
@@ -296,28 +309,39 @@ function editUpdateKinderList() {
 function addChildRow(containerId, naam = "", datum = "") {
   const container = document.getElementById(containerId);
   const row = document.createElement("div");
-  row.className = "child-row";
-  row.style.display = "flex";
-  row.style.marginTop = "6px";
+  row.className = "child-row d-flex mt-2";
 
   const nameInput = document.createElement("input");
-  nameInput.type = "text"; nameInput.name = "kind_namen[]"; nameInput.placeholder = "Naam";
-  nameInput.value = naam; nameInput.required = true; nameInput.style.flex = "1";
+  nameInput.type = "text";
+  nameInput.name = "kind_namen[]";
+  nameInput.placeholder = "Naam";
+  nameInput.value = naam;
+  nameInput.required = true;
+  nameInput.className = "form-control";
 
   const dateInput = document.createElement("input");
-  dateInput.type = "date"; dateInput.name = "kind_datums[]"; dateInput.value = datum || "";
-  dateInput.required = true; dateInput.style.marginLeft = "6px";
+  dateInput.type = "date";
+  dateInput.name = "kind_datums[]";
+  dateInput.value = datum || "";
+  dateInput.required = true;
+  dateInput.className = "form-control ms-2";
 
   const removeBtn = document.createElement("button");
-  removeBtn.type = "button"; removeBtn.textContent = "✖"; removeBtn.className = "remove-kind"; removeBtn.style.marginLeft = "6px";
+  removeBtn.type = "button";
+  removeBtn.textContent = "✖";
+  removeBtn.className = "remove-kind ms-2";
   removeBtn.onclick = () => row.remove();
 
-  row.appendChild(nameInput); row.appendChild(dateInput); row.appendChild(removeBtn);
+  row.appendChild(nameInput);
+  row.appendChild(dateInput);
+  row.appendChild(removeBtn);
+
   container.appendChild(row);
 }
 
 function openKlantPopup(btn) {
   const id = btn.dataset.id;
+
   document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
   document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
   document.getElementById("klant-email").value = btn.dataset.email;
@@ -345,21 +369,5 @@ function openKlantPopup(btn) {
 
 function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
 </script>
-
-<style>
-.link-btn {
-  background: none; border: none; color: #2563eb;
-  text-decoration: underline; cursor: pointer; font: inherit;
-  text-align: left; /* <<< alles links uitlijnen */
-}
-.klant-cell { text-align: left; } /* <<< klant kolom links */
-.betaling-status {
-  padding: 4px 8px; border-radius: 6px; color: white; font-weight: bold;
-}
-.betaling-status.contant,
-.betaling-status.kaart,
-.betaling-status.overschrijven_voldaan { background-color: #16a34a; }
-.betaling-status.overschrijven_niet_voldaan { background-color: #dc2626; }
-</style>
 
 {% endblock %}

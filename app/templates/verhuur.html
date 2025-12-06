@@ -1,15 +1,16 @@
-{% extends 'index.html' %} 
+{% extends 'index.html' %}
 {% set title = "Verhuur - Bike Lending Portaal" %}
 
 {% block main_content %}
 
-<h1>Verhuur</h1>
-<p class="count-text">Totaal actief verhuur: {{ totaal_actief }}</p>
+<h1 class="mb-3">Verhuur</h1>
 
-<button class="add-button" onclick="openVerhuurPopup()"> Nieuwe verhuur</button>
+<p class="fw-bold mb-3">Totaal actief verhuur: {{ totaal_actief }}</p>
 
-<table>
-  <thead>
+<button class="btn-add mb-3" onclick="openVerhuurPopup()">Nieuwe verhuur</button>
+
+<table class="table table-striped table-bordered bg-white">
+  <thead class="table-light">
     <tr>
       <th>Verhuur ID</th>
       <th>Fiets</th>
@@ -20,10 +21,12 @@
       <th>Actie</th>
     </tr>
   </thead>
+
   <tbody>
     {% for v in verhuur_lijst %}
     <tr data-verhuur-id="{{ v.verhuur_id }}">
       <td>{{ "%05d" % v.verhuur_id }}</td>
+
       <td>
         {% if v.item %}
           {{ "%05d" % v.itemnr }} – {{ v.item.merk }} {{ v.item.model }} ({{ v.item.status.value }})
@@ -31,7 +34,8 @@
           Fiets {{ v.itemnr }}
         {% endif %}
       </td>
-      <td>
+
+      <td class="text-start">
         {% if v.verantwoordelijke %}
           <button
             type="button"
@@ -47,44 +51,52 @@
             data-land="{{ v.verantwoordelijke.adres.land }}"
             onclick="openKlantPopup(this)"
           >
-            {{ "%05d" % v.verantwoordelijke.verantwoordelijke_id }} – {{ v.verantwoordelijke.voornaam }} {{ v.verantwoordelijke.achternaam }}
+            {{ "%05d" % v.verantwoordelijke.verantwoordelijke_id }} –
+            {{ v.verantwoordelijke.voornaam }} {{ v.verantwoordelijke.achternaam }}
           </button>
         {% else %}
           -
         {% endif %}
       </td>
+
       <td>
         {% if v.kind %}
           {{ v.kind.naam }} ({{ v.kind.leeftijd }} jaar)
         {% else %}-{% endif %}
       </td>
+
       <td>
         {{ v.startdatum.strftime('%d-%m-%Y') }} – {{ v.einddatum.strftime('%d-%m-%Y') }}
       </td>
+
       <td>
-        <span class="status {{ v.status.name | lower }}">
+        <span class="verhuur-status verhuur-{{ v.status.name | lower }}">
           {{ v.status.value }}
         </span>
       </td>
+
       <td>
         {% if v.status == VerhuurStatusEnum.ACTIEF %}
+
         <form method="POST"
               action="/verhuur/beëindigen/{{ v.verhuur_id }}"
-              style="display:inline-block;"
+              class="d-inline"
               onsubmit="return confirm('Ben je zeker dat je deze verhuur wil beëindigen?');">
-          <button type="submit" class="cancel-btn">Beëindig verhuur</button>
+          <button type="submit" class="btn-cancel">Beëindig verhuur</button>
         </form>
 
-        <button class="add-button verleng-btn"
+        <button class="btn-add mt-2"
                 data-verhuur-id="{{ v.verhuur_id }}"
-                data-einddatum="{{ v.einddatum.strftime('%d-%m-%Y') if v.einddatum else '' }}"
+                data-einddatum="{{ v.einddatum.strftime('%d-%m-%Y') }}"
                 onclick="openVerlengPopup(this.dataset.verhuurId, this.dataset.einddatum)">
-            Verleng verhuur
+          Verleng verhuur
         </button>
+
         {% else %}
-          - 
+          -
         {% endif %}
       </td>
+
     </tr>
     {% endfor %}
   </tbody>
@@ -94,304 +106,326 @@
 
 {% block popup %}
 
-<!-- ============== NIEUWE VERHUUR POPUP ============== -->
+<!-- ================= NIEUWE VERHUUR ================= -->
 <div id="verhuur-popup" class="popup-overlay">
-  <form class="popup" method="POST" action="/verhuur/toevoegen">
-    
-    <h3>Nieuwe verhuur</h3>
+  <form class="popup-box" method="POST" action="/verhuur/toevoegen">
 
-    <!-- Klant -->
-    <label>Klant:</label>
-    <select name="verantwoordelijke_id" id="klant-select" required>
+    <h3 class="mb-3">Nieuwe verhuur</h3>
+
+    <label class="form-label">Klant</label>
+    <select name="verantwoordelijke_id" id="klant-select" class="form-select mb-3" required>
       <option value="">-- Kies een klant --</option>
       {% for v in verantwoordelijken %}
       <option value="{{ v.verantwoordelijke_id }}">
-        {{ "%05d" % v.verantwoordelijke_id }} - {{ v.voornaam }} {{ v.achternaam }}
+        {{ "%05d" % v.verantwoordelijke_id }} – {{ v.voornaam }} {{ v.achternaam }}
       </option>
       {% endfor %}
     </select>
 
-    <!-- Kind -->
-    <label>Kind:</label>
-    <div id="kind-container">
-      <p class="count-text">Kies eerst een klant.</p>
-    </div>
+    <label class="form-label">Kind</label>
+    <div id="kind-container" class="mb-3 text-muted">Kies eerst een klant.</div>
 
-    <!-- Fiets -->
-    <label>Fiets:</label>
-    <select name="itemnr" id="fiets-select" required>
-        <option value="">-- Kies eerst een kind --</option>
+    <label class="form-label">Fiets</label>
+    <select name="itemnr" id="fiets-select" class="form-select mb-3" required>
+      <option value="">-- Kies eerst een kind --</option>
     </select>
-      
-    <!-- Periode -->
-    <label>Periode:</label>
-    <div style="display:flex; gap:8px;">
-      <div style="flex:1;">
-        <span class="count-text">Startdatum</span>
-        <input type="date" name="startdatum" required>
+
+    <label class="form-label">Periode</label>
+
+    <div class="row mb-3">
+      <div class="col">
+        <input type="date" name="startdatum" class="form-control" required>
       </div>
-      <div style="flex:1;">
-        <span class="count-text">Einddatum</span>
-        <input type="date" name="einddatum" required>
+      <div class="col">
+        <input type="date" name="einddatum" class="form-control" required>
       </div>
     </div>
 
-    <div class="popup-buttons" style="margin-top:15px;">
-      <button type="button" class="cancel-btn" onclick="closeVerhuurPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeVerhuurPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
+
   </form>
 </div>
 
-<!-- ============== KLANT-DETAIL/BEWERKEN POPUP ============== -->
-<div id="klant-popup" class="popup-overlay">
-  <form id="klant-form" class="popup" method="POST">
-    <h3>Klantgegevens</h3>
-
-    <label>Voornaam:</label>
-    <input type="text" name="voornaam" id="klant-voornaam" required>
-
-    <label>Achternaam:</label>
-    <input type="text" name="achternaam" id="klant-achternaam" required>
-
-    <label>Email:</label>
-    <input type="email" name="email" id="klant-email" required>
-
-    <hr>
-
-    <label>Straat:</label>
-    <input type="text" name="straat" id="klant-straat" required>
-
-    <label>Huisnummer:</label>
-    <input type="text" name="huisnummer" id="klant-huisnummer" required>
-
-    <label>Postcode:</label>
-    <input type="number" name="postcode" id="klant-postcode" required>
-
-    <label>Gemeente:</label>
-    <input type="text" name="gemeente" id="klant-gemeente" required>
-
-    <label>Land:</label>
-    <input type="text" name="land" id="klant-land" required>
-
-    <hr>
-
-    <label>Kinderen:</label>
-    <div id="klant-children-container"></div>
-
-    <button type="button" class="add-button" onclick="addChildRow('klant-children-container')">
-      Kind toevoegen
-    </button>
-
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeKlantPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
-    </div>
-  </form>
-</div>
-
-<!-- ============== VERHUUR VERLENGEN POPUP ============== -->
+<!-- ================= VERLENG VERHUUR ================= -->
 <div id="verleng-popup" class="popup-overlay">
-  <form id="verleng-form" class="popup" method="POST">
-    <h3>Verhuur verlengen</h3>
+  <form id="verleng-form" class="popup-box" method="POST">
 
-    <label>Huidige einddatum:</label>
-    <input type="text" id="huidige-einddatum" disabled>
+    <h3 class="mb-3">Verhuur verlengen</h3>
 
-    <label>Nieuwe einddatum:</label>
-    <input type="date" name="nieuwe_einddatum" id="nieuwe-einddatum" required>
+    <label class="form-label">Huidige einddatum</label>
+    <input type="text" id="huidige-einddatum" class="form-control mb-3" disabled>
 
-    <div class="popup-buttons" style="margin-top:15px;">
-      <button type="button" class="cancel-btn" onclick="closeVerlengPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <label class="form-label">Nieuwe einddatum</label>
+    <input type="date" name="nieuwe_einddatum" id="nieuwe-einddatum" class="form-control mb-3" required>
+
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeVerlengPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
+
   </form>
 </div>
 
+<!-- ================= KLANT POPUP ================= -->
+<div id="klant-popup" class="popup-overlay">
+  <form id="klant-form" class="popup-box" method="POST">
+
+    <h3 class="mb-3">Klantgegevens</h3>
+
+    <label class="form-label">Voornaam</label>
+    <input type="text" id="klant-voornaam" name="voornaam" class="form-control mb-2" required>
+
+    <label class="form-label">Achternaam</label>
+    <input type="text" id="klant-achternaam" name="achternaam" class="form-control mb-2" required>
+
+    <label class="form-label">Email</label>
+    <input type="email" id="klant-email" name="email" class="form-control mb-3" required>
+
+    <label class="form-label">Straat</label>
+    <input type="text" id="klant-straat" name="straat" class="form-control mb-2" required>
+
+    <label class="form-label">Huisnummer</label>
+    <input type="text" id="klant-huisnummer" name="huisnummer" class="form-control mb-2" required>
+
+    <label class="form-label">Postcode</label>
+    <input type="number" id="klant-postcode" name="postcode" class="form-control mb-2" required>
+
+    <label class="form-label">Gemeente</label>
+    <input type="text" id="klant-gemeente" name="gemeente" class="form-control mb-2" required>
+
+    <label class="form-label">Land</label>
+    <input type="text" id="klant-land" name="land" class="form-control mb-3" required>
+
+    <label class="form-label">Kinderen</label>
+    <div id="klant-children-container" class="mb-2"></div>
+
+    <button type="button" class="btn-add mb-3" onclick="addChildRow('klant-children-container')">Kind toevoegen</button>
+
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeKlantPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
+    </div>
+
+  </form>
+</div>
+
+
+<!-- ================= DATA SCRIPTS ================= -->
 <script id="klant-kind-data" type="application/json">
   {{ klant_kind_data | tojson | safe }}
 </script>
 
-  <script>
-  const KLANT_KIND_DATA = JSON.parse(document.getElementById("klant-kind-data").textContent);
+<script>
+/* ================================
+   JAVASCRIPT — volledig werkend
+================================ */
 
-  function openVerhuurPopup() {
-    document.getElementById("verhuur-popup").style.display = "flex";
+const KLANT_KIND_DATA = JSON.parse(document.getElementById("klant-kind-data").textContent);
+
+
+/* ——————— Popup Controls ——————— */
+
+function openVerhuurPopup() { document.getElementById("verhuur-popup").style.display = "flex"; }
+function closeVerhuurPopup() { document.getElementById("verhuur-popup").style.display = "none"; }
+
+function openVerlengPopup(verhuurId, huidigeEinddatum) {
+  document.getElementById("huidige-einddatum").value = huidigeEinddatum;
+  const form = document.getElementById("verleng-form");
+  form.action = `/verhuur/verleng/${verhuurId}`;
+  document.getElementById("verleng-popup").style.display = "flex";
+}
+function closeVerlengPopup() { document.getElementById("verleng-popup").style.display = "none"; }
+
+function openKlantPopup(btn) {
+  const id = btn.dataset.id;
+  document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
+  document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
+  document.getElementById("klant-email").value = btn.dataset.email;
+  document.getElementById("klant-straat").value = btn.dataset.straat;
+  document.getElementById("klant-huisnummer").value = btn.dataset.huisnummer;
+  document.getElementById("klant-postcode").value = btn.dataset.postcode;
+  document.getElementById("klant-gemeente").value = btn.dataset.gemeente;
+  document.getElementById("klant-land").value = btn.dataset.land;
+
+  const container = document.getElementById("klant-children-container");
+  container.innerHTML = "";
+
+  const kinderen = KLANT_KIND_DATA[id] || [];
+  if (kinderen.length === 0) addChildRow("klant-children-container");
+  else kinderen.forEach(k => addChildRow("klant-children-container", k.naam, k.geboortedatum || ""));
+
+  document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
+  document.getElementById("klant-popup").style.display = "flex";
+}
+
+function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
+
+
+/* ——————— Dynamische kinderen en fietsen ——————— */
+
+function updateKindList() {
+  const klantId = document.getElementById("klant-select").value;
+  const container = document.getElementById("kind-container");
+  const fietsSelect = document.getElementById("fiets-select");
+
+  container.innerHTML = "";
+  fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
+
+  if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
+    container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
+    return;
   }
-  function closeVerhuurPopup() {
-    document.getElementById("verhuur-popup").style.display = "none";
-  }
 
-  function openKlantPopup(btn) {
-    const id = btn.dataset.id;
-    document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
-    document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
-    document.getElementById("klant-email").value = btn.dataset.email;
-    document.getElementById("klant-straat").value = btn.dataset.straat;
-    document.getElementById("klant-huisnummer").value = btn.dataset.huisnummer;
-    document.getElementById("klant-postcode").value = btn.dataset.postcode;
-    document.getElementById("klant-gemeente").value = btn.dataset.gemeente;
-    document.getElementById("klant-land").value = btn.dataset.land;
+  const list = document.createElement("div");
 
-    const container = document.getElementById("klant-children-container");
-    container.innerHTML = "";
+  KLANT_KIND_DATA[klantId].forEach(child => {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.marginTop = "4px";
 
-    const kinderen = KLANT_KIND_DATA[id] || [];
-    if (kinderen.length === 0) addChildRow("klant-children-container");
-    else kinderen.forEach(k => addChildRow("klant-children-container", k.naam, k.geboortedatum || ""));
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "kind_id";
+    radio.value = child.id;
+    radio.required = true;
 
-    document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
-    document.getElementById("klant-popup").style.display = "flex";
-  }
-  function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
+    radio.addEventListener("change", () => laadFietsAdvies(child.id));
 
-    async function laadFietsAdvies(kindId) {
-    const fietsSelect = document.getElementById("fiets-select");
-    if (!fietsSelect) return;
+    const label = document.createElement("label");
+    label.style.marginLeft = "6px";
+    label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
 
-    fietsSelect.innerHTML = '<option value="">-- Kies een fiets --</option>';
+    row.appendChild(radio);
+    row.appendChild(label);
+    list.appendChild(row);
 
-    if (!kindId) return;
+    // Info over lopende verhuur
+    const info = document.createElement("div");
+    info.style.marginLeft = "26px";
+    info.style.fontSize = "0.85em";
+    info.style.color = "#b91c1c";
 
-    try {
-      const response = await fetch(`/api/fietsen-advies/${kindId}`);
-      const data = await response.json();
-      data.sort((a, b) => b.score - a.score);
+    fetch(`/api/kind/${child.id}/lopende_verhuur`)
+      .then(r => r.json())
+      .then(d => { if (d.aantal > 0) info.textContent = `${d.aantal} lopende verhuur`; });
 
-      data.forEach(f => {
-        const opt = document.createElement("option");
-        const nummer = String(f.itemnr).padStart(5, "0");
-        const extra = f.score === 2 ? " ⭐ voorgesteld" :
-                      f.score === 1 ? " (alternatief)" : "";
-        opt.value = f.itemnr;
-        opt.textContent = `${nummer} – ${f.omschrijving}${extra}`;
-        fietsSelect.appendChild(opt);
-      });
-    } catch (err) {
-      console.error("Fout bij ophalen advies:", err);
-    }
-  }
+    list.appendChild(info);
+  });
 
-  function updateKindList() {
-    const klantId = document.getElementById("klant-select").value;
-    const container = document.getElementById("kind-container");
-    const fietsSelect = document.getElementById("fiets-select");
+  container.appendChild(list);
+}
 
-    container.innerHTML = "";
-    fietsSelect.innerHTML = '<option value="">-- Kies eerst een kind --</option>';
 
-    if (!klantId || !(klantId in KLANT_KIND_DATA) || KLANT_KIND_DATA[klantId].length === 0) {
-      container.innerHTML = "<p class='count-text'>Deze klant heeft geen kinderen.</p>";
-      return;
-    }
+async function laadFietsAdvies(kindId) {
+  const fietsSelect = document.getElementById("fiets-select");
+  fietsSelect.innerHTML = '<option value="">-- Kies een fiets --</option>';
 
-    const list = document.createElement("div");
+  try {
+    const response = await fetch(`/api/fietsen-advies/${kindId}`);
+    const data = await response.json();
 
-    KLANT_KIND_DATA[klantId].forEach(child => {
-      const row = document.createElement("div");
-      row.style.display = "flex";
-      row.style.alignItems = "center";
-      row.style.marginTop = "4px";
+    data.sort((a, b) => b.score - a.score);
 
-      const radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "kind_id";
-      radio.value = child.id;
-      radio.required = true;
-
-      radio.addEventListener("change", () => {
-        laadFietsAdvies(child.id);
-      });
-
-      const label = document.createElement("label");
-      label.style.marginLeft = "6px";
-      label.textContent = `${child.naam} (${child.leeftijd} jaar)`;
-
-      row.appendChild(radio);
-      row.appendChild(label);
-      list.appendChild(row);
-
-      const info = document.createElement("div");
-      info.style.marginLeft = "26px";
-      info.style.fontSize = "0.85em";
-      info.style.color = "#b91c1c";
-
-      fetch(`/api/kind/${child.id}/lopende_verhuur`)
-        .then(r => r.json())
-        .then(d => {
-          if (d.aantal > 0) info.textContent = `${d.aantal} lopende verhuur`;
-        });
-
-      list.appendChild(info);
+    data.forEach(f => {
+      const opt = document.createElement("option");
+      const nummer = String(f.itemnr).padStart(5, "0");
+      const extra = f.score === 2 ? " ⭐ voorgesteld" :
+                    f.score === 1 ? " (alternatief)" : "";
+      opt.value = f.itemnr;
+      opt.textContent = `${nummer} – ${f.omschrijving}${extra}`;
+      fietsSelect.appendChild(opt);
     });
 
-    container.appendChild(list);
+  } catch (err) {
+    console.error("Fout bij ophalen advies:", err);
   }
-  function addChildRow(containerId, naam = "", datum = "") {
-    const container = document.getElementById(containerId);
-    const row = document.createElement("div");
-    row.className = "child-row"; row.style.display = "flex"; row.style.marginTop = "6px";
+}
 
-    const nameInput = document.createElement("input");
-    nameInput.type = "text"; nameInput.name = "kind_namen[]"; nameInput.placeholder = "Naam";
-    nameInput.value = naam; nameInput.required = true; nameInput.style.flex = "1";
 
-    const dateInput = document.createElement("input");
-    dateInput.type = "date"; dateInput.name = "kind_datums[]"; dateInput.value = datum;
-    dateInput.required = true; dateInput.style.marginLeft = "6px";
+/* ——————— Klant-kind invoer ——————— */
 
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button"; removeBtn.textContent = "✖"; removeBtn.className = "remove-kind"; removeBtn.style.marginLeft = "6px";
-    removeBtn.onclick = () => row.remove();
+function addChildRow(containerId, naam = "", datum = "") {
+  const container = document.getElementById(containerId);
+  const row = document.createElement("div");
+  row.className = "child-row";
+  row.style.display = "flex";
+  row.style.marginTop = "6px";
 
-    row.appendChild(nameInput); row.appendChild(dateInput); row.appendChild(removeBtn);
-    container.appendChild(row);
-  }
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.name = "kind_namen[]";
+  nameInput.placeholder = "Naam";
+  nameInput.value = naam;
+  nameInput.required = true;
+  nameInput.style.flex = "1";
 
-  function openVerlengPopup(verhuurId, huidigeEinddatum) {
-    document.getElementById("huidige-einddatum").value = huidigeEinddatum;
-    const form = document.getElementById("verleng-form");
-    form.action = `/verhuur/verleng/${verhuurId}`;
-    document.getElementById("verleng-popup").style.display = "flex";
-  }
-  function closeVerlengPopup() { document.getElementById("verleng-popup").style.display = "none"; }
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.name = "kind_datums[]";
+  dateInput.value = datum;
+  dateInput.required = true;
+  dateInput.style.marginLeft = "6px";
 
-  document.getElementById("verleng-form").addEventListener("submit", async function(e){
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const action = form.action;
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.textContent = "✖";
+  removeBtn.className = "remove-kind";
+  removeBtn.style.marginLeft = "6px";
+  removeBtn.onclick = () => row.remove();
 
-    try {
-      const response = await fetch(action, { method:'POST', body: formData });
-      if(response.ok){
-        const nieuweDatumRaw = formData.get("nieuwe_einddatum"); // YYYY-MM-DD
-        const parts = nieuweDatumRaw.split("-"); // [YYYY, MM, DD]
-        const nieuweDatum = `${parts[2]}-${parts[1]}-${parts[0]}`; // DD-MM-YYYY
+  row.appendChild(nameInput);
+  row.appendChild(dateInput);
+  row.appendChild(removeBtn);
 
-        const verhuurId = action.split("/").pop();
-        const rij = document.querySelector(`tr[data-verhuur-id='${verhuurId}']`);
-        if(rij){
-          const periodeCel = rij.querySelector("td:nth-child(5)");
-          const huidigeStart = periodeCel.textContent.split("–")[0].trim();
-          periodeCel.textContent = `${huidigeStart} – ${nieuweDatum}`;
-        }
-        closeVerlengPopup();
-        alert(`Verhuur ${verhuurId} verlengd tot ${nieuweDatum}.`);
-      } else {
-        alert("Kon de verhuur niet verlengen.");
+  container.appendChild(row);
+}
+
+
+/* ——————— Verleng Form Submit ——————— */
+
+document.getElementById("verleng-form").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+  const action = form.action;
+
+  try {
+    const response = await fetch(action, { method:'POST', body: formData });
+    if(response.ok){
+      const nieuweDatumRaw = formData.get("nieuwe_einddatum");
+      const parts = nieuweDatumRaw.split("-");
+      const nieuweDatum = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+      const verhuurId = action.split("/").pop();
+      const rij = document.querySelector(`tr[data-verhuur-id='${verhuurId}']`);
+      if(rij){
+        const periodeCel = rij.querySelector("td:nth-child(5)");
+        const huidigeStart = periodeCel.textContent.split("–")[0].trim();
+        periodeCel.textContent = `${huidigeStart} – ${nieuweDatum}`;
       }
-    } catch(err){
-      console.error(err);
-      alert("Er is iets misgegaan bij verlengen.");
+      closeVerlengPopup();
+      alert(`Verhuur ${verhuurId} verlengd tot ${nieuweDatum}.`);
+    } else {
+      alert("Kon de verhuur niet verlengen.");
     }
-  });
+  } catch(err){
+    console.error(err);
+    alert("Er is iets misgegaan bij verlengen.");
+  }
+});
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("klant-select").addEventListener("change", updateKindList);
-  });
+
+/* ——————— Init ——————— */
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("klant-select").addEventListener("change", updateKindList);
+});
+
 </script>
-
 
 <style>
   .link-btn { background: none; border: none; padding:0; margin:0; color:#2563eb; text-decoration:underline; cursor:pointer; font:inherit; text-align:left; }

@@ -1,16 +1,14 @@
 {% extends 'index.html' %}
 
 {% block main_content %}
-<h1>Welkom bij het Bike Lending Portaal</h1>
+<h1 class="mb-3">Welkom bij het Bike Lending Portaal</h1>
 
 {% if session.get('rol') %}
-    <p>Je bent ingelogd als: {{ session.get('rol') }}</p>
-    <a href="/logout">Uitloggen</a>
+    <p class="mb-2">Je bent ingelogd als: <strong>{{ session.get('rol') }}</strong></p>
+    <a href="/logout" class="btn btn-cancel">Uitloggen</a>
 {% else %}
-    <p><a href="/login">Login</a> om verder te gaan</p>
+    <p><a href="/login" class="btn btn-add">Login</a> om verder te gaan</p>
 {% endif %}
 
-<p>Selecteer een onderdeel uit het menu links.</p>
+<p class="mt-4">Selecteer een onderdeel uit het menu links.</p>
 {% endblock %}
-
-

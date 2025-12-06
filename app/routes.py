@@ -63,10 +63,16 @@ def logout():
     return redirect("/login")
 
 # ---------------------- KLANTEN ----------------------
-@main.route("/klanten")
+@main.route("/klanten") # DIT IS DE FUNCTIE DIE DE PAGINA EN KNOPPEN LAADT
 @rol_required(["depotmedewerker", "financieel"])
 def klanten():
     verantwoordelijken = Verantwoordelijke.query.all()
+    
+    # 💡 CORRECT: Bepaal de status voordat de template wordt gerenderd
+    for v in verantwoordelijken:
+        for k in v.kinderen:
+            k.heeft_betalingen = bool(k.betalingen) # Voeg True/False toe aan het Kind object
+            
     return render_template("klanten.html", verantwoordelijken=verantwoordelijken)
 
 @main.post("/klanten/toevoegen")
