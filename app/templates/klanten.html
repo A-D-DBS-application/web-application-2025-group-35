@@ -3,19 +3,18 @@
 
 {% block main_content %}
 
-<h1>Klanten</h1>
-<p class="count-text">Aantal klanten: {{ verantwoordelijken|length }}</p>
+<h1 class="mb-3">Klanten</h1>
 
-<button class="add-button" onclick="openAddPopup()" style="margin-bottom: 15px;">
-    Nieuwe klant
-</button>
+<p class="fw-bold mb-3">Aantal klanten: {{ verantwoordelijken|length }}</p>
 
-<div class="search-bar">
-    <input type="text" id="search" placeholder="Zoek klant..." onkeyup="filterKlanten()">
+<button class="btn-add mb-3" onclick="openAddPopup()">Nieuwe klant</button>
+
+<div class="mb-3">
+    <input type="text" id="search" class="form-control" placeholder="Zoek klant..." onkeyup="filterKlanten()">
 </div>
 
-<table id="klanten-table">
-  <thead>
+<table class="table table-bordered table-striped bg-white">
+  <thead class="table-light">
     <tr>
       <th>Klant ID</th>
       <th>Voornaam</th>
@@ -26,6 +25,7 @@
       <th>Bewerken</th>
     </tr>
   </thead>
+
   <tbody id="klanten-body">
     {% for v in verantwoordelijken %}
     <tr>
@@ -33,21 +33,28 @@
       <td>{{ v.voornaam }}</td>
       <td>{{ v.achternaam }}</td>
       <td>{{ v.email }}</td>
-      <td>{{ v.adres.straat }} {{ v.adres.huisnummer }}, {{ v.adres.postcode }} {{ v.adres.gemeente }}, {{ v.adres.land }}</td>
+
       <td>
+        {{ v.adres.straat }} {{ v.adres.huisnummer }},
+        {{ v.adres.postcode }} {{ v.adres.gemeente }},
+        {{ v.adres.land }}
+      </td>
+
+      <td class="text-start">
         {% if v.kinderen %}
-          <ul style="margin:0; padding-left:18px;">
+          <div class="children-list">
             {% for k in v.kinderen %}
-              <li>{{ k.naam }} ({{ k.leeftijd }} jaar)</li>
+              <div>• {{ k.naam }} ({{ k.leeftijd }} jaar)</div>
             {% endfor %}
-          </ul>
+          </div>
         {% else %}
           -
         {% endif %}
       </td>
+
       <td>
         <button
-          class="edit-btn"
+          class="btn-edit"
           data-id="{{ v.verantwoordelijke_id }}"
           data-voornaam="{{ v.voornaam }}"
           data-achternaam="{{ v.achternaam }}"
@@ -75,56 +82,56 @@
 
 {% block popup %}
 
-<!-- KLEINE ERROR POPUP -->
-<div id="small-error-popup" class="popup-overlay" style="display:none; z-index:9999;">
-  <div class="popup" style="max-width: 400px; text-align:center; padding:15px;">
-    <p id="small-error-message" style="margin:0; font-weight:bold; color:red;"></p>
-    <button type="button" class="cancel-btn" onclick="closeSmallErrorPopup()" style="margin-top:10px;">Sluiten</button>
+<!-- Kleine Error Popup -->
+<div id="small-error-popup" class="popup-overlay" style="display:none;">
+  <div class="popup-box text-center" style="max-width: 400px;">
+    <p id="small-error-message" class="fw-bold text-danger mb-2"></p>
+    <button type="button" class="btn-cancel mt-2" onclick="closeSmallErrorPopup()">Sluiten</button>
   </div>
 </div>
 
 <!-- KLANT TOEVOEGEN -->
 <div id="add-popup" class="popup-overlay">
-  <form class="popup" method="POST" action="/klanten/toevoegen">
+  <form class="popup-box" method="POST" action="/klanten/toevoegen">
 
-    <h3>Nieuwe klant toevoegen</h3>
+    <h3 class="mb-3">Nieuwe klant toevoegen</h3>
 
-    <label>Voornaam:</label>
-    <input type="text" name="voornaam" required>
+    <label class="form-label">Voornaam</label>
+    <input type="text" name="voornaam" class="form-control mb-2" required>
 
-    <label>Achternaam:</label>
-    <input type="text" name="achternaam" required>
+    <label class="form-label">Achternaam</label>
+    <input type="text" name="achternaam" class="form-control mb-2" required>
 
-    <label>Email:</label>
-    <input type="email" name="email" required>
+    <label class="form-label">Email</label>
+    <input type="email" name="email" class="form-control mb-2" required>
 
-    <label>Straat:</label>
-    <input type="text" name="straat" required>
+    <label class="form-label">Straat</label>
+    <input type="text" name="straat" class="form-control mb-2" required>
 
-    <label>Huisnummer:</label>
-    <input type="text" name="huisnummer" required>
+    <label class="form-label">Huisnummer</label>
+    <input type="text" name="huisnummer" class="form-control mb-2" required>
 
-    <label>Postcode:</label>
-    <input type="number" name="postcode" required>
+    <label class="form-label">Postcode</label>
+    <input type="number" name="postcode" class="form-control mb-2" required>
 
-    <label>Gemeente:</label>
-    <input type="text" name="gemeente" required>
+    <label class="form-label">Gemeente</label>
+    <input type="text" name="gemeente" class="form-control mb-2" required>
 
-    <label>Land:</label>
-    <input type="text" name="land" required>
+    <label class="form-label">Land</label>
+    <input type="text" name="land" class="form-control mb-3" required>
 
     <hr>
 
-    <label>Kind(eren):</label>
-    <div id="add-children-container"></div>
+    <label class="form-label">Kind(eren)</label>
+    <div id="add-children-container" class="mb-2"></div>
 
-    <button type="button" class="add-button" onclick="addChildRow('add-children-container')">
+    <button type="button" class="btn-add mb-3" onclick="addChildRow('add-children-container')">
       Kind toevoegen
     </button>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeAddPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeAddPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
 
   </form>
@@ -132,183 +139,138 @@
 
 <!-- KLANT BEWERKEN -->
 <div id="edit-popup" class="popup-overlay">
-  <form id="edit-form" class="popup" method="POST">
+  <form id="edit-form" class="popup-box" method="POST">
 
-    <h3>Klant bewerken</h3>
+    <h3 class="mb-3">Klant bewerken</h3>
 
-    <label>Voornaam:</label>
-    <input type="text" name="voornaam" id="edit-voornaam" required>
+    <label class="form-label">Voornaam</label>
+    <input type="text" name="voornaam" id="edit-voornaam" class="form-control mb-2" required>
 
-    <label>Achternaam:</label>
-    <input type="text" name="achternaam" id="edit-achternaam" required>
+    <label class="form-label">Achternaam</label>
+    <input type="text" name="achternaam" id="edit-achternaam" class="form-control mb-2" required>
 
-    <label>Email:</label>
-    <input type="email" name="email" id="edit-email" required>
+    <label class="form-label">Email</label>
+    <input type="email" name="email" id="edit-email" class="form-control mb-2" required>
 
-    <label>Straat:</label>
-    <input type="text" name="straat" id="edit-straat" required>
+    <label class="form-label">Straat</label>
+    <input type="text" name="straat" id="edit-straat" class="form-control mb-2" required>
 
-    <label>Huisnummer:</label>
-    <input type="text" name="huisnummer" id="edit-huisnummer" required>
+    <label class="form-label">Huisnummer</label>
+    <input type="text" name="huisnummer" id="edit-huisnummer" class="form-control mb-2" required>
 
-    <label>Postcode:</label>
-    <input type="number" name="postcode" id="edit-postcode" required>
+    <label class="form-label">Postcode</label>
+    <input type="number" name="postcode" id="edit-postcode" class="form-control mb-2" required>
 
-    <label>Gemeente:</label>
-    <input type="text" name="gemeente" id="edit-gemeente" required>
+    <label class="form-label">Gemeente</label>
+    <input type="text" name="gemeente" id="edit-gemeente" class="form-control mb-2" required>
 
-    <label>Land:</label>
-    <input type="text" name="land" id="edit-land" required>
+    <label class="form-label">Land</label>
+    <input type="text" name="land" id="edit-land" class="form-control mb-3" required>
 
     <hr>
 
-    <label>Kinderen:</label>
-    <div id="edit-children-container"></div>
+    <label class="form-label">Kinderen</label>
+    <div id="edit-children-container" class="mb-2"></div>
 
-    <button type="button" class="add-button" onclick="addChildRow('edit-children-container')">
-      Kind toevoegen
-    </button>
+    <button type="button" class="btn-add mb-3" onclick="addChildRow('edit-children-container')">Kind toevoegen</button>
 
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeEditPopup()">Annuleren</button>
-      <button type="submit" class="save-btn">Opslaan</button>
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeEditPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
     </div>
 
   </form>
 </div>
 
-<!-- ERROR POPUP BOVEN EDIT POPUP -->
-<div id="error-popup" class="popup-overlay" style="display:none; z-index:9999;">
-  <div class="popup">
-    <h3>Fout</h3>
-    <p id="error-message"></p>
-    <div class="popup-buttons">
-      <button type="button" class="cancel-btn" onclick="closeErrorPopup()">Sluiten</button>
-    </div>
-  </div>
-</div>
-
 <script>
-// Toon error-popup
-function showErrorPopup(message) {
-  const popup = document.getElementById("error-popup");
-  const msg = document.getElementById("error-message");
-  msg.textContent = message;
-  popup.style.display = "flex";
+
+// ——— Filtering ———
+function filterKlanten() {
+  const q = document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll("#klanten-body tr").forEach(row =>
+    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none"
+  );
 }
 
-// Sluit error-popup
-function closeErrorPopup() {
-  document.getElementById("error-popup").style.display = "none";
+// ——— Kleine error popup ———
+function closeSmallErrorPopup() {
+  document.getElementById("small-error-popup").style.display = "none";
+}
+function showSmallErrorPopup(message) {
+  document.getElementById("small-error-message").textContent = message;
+  document.getElementById("small-error-popup").style.display = "flex";
 }
 
-// Voeg kind-rij toe (bewerken)
+// ——— Kind toevoegen ———
 function addChildRow(containerId, naam = "", datum = "", id = "", canDelete = true) {
   const container = document.getElementById(containerId);
-
   const row = document.createElement("div");
-  row.className = "child-row";
-  row.style.display = "flex";
-  row.style.marginTop = "6px";
+  row.className = "child-row d-flex mt-2";
   row.dataset.id = id;
   row.dataset.canDelete = canDelete;
 
-  const nameInput = document.createElement("input");
-  nameInput.type = "text";
-  nameInput.name = "kind_namen[]";
-  nameInput.placeholder = "Naam";
-  nameInput.value = naam;
-  nameInput.required = true;
-  nameInput.style.flex = "1";
+  row.innerHTML = `
+    <input type="text" class="form-control" name="kind_namen[]" placeholder="Naam" value="${naam}" required>
+    <input type="date" class="form-control ms-2" name="kind_datums[]" value="${datum}" required>
+    <input type="hidden" name="kind_ids[]" value="${id}">
+    <button type="button" class="remove-kind ms-2">✖</button>
+  `;
 
-  const dateInput = document.createElement("input");
-  dateInput.type = "date";
-  dateInput.name = "kind_datums[]";
-  dateInput.value = datum || "";
-  dateInput.required = true;
-  dateInput.style.marginLeft = "6px";
-
-  const idInput = document.createElement("input");
-  idInput.type = "hidden";
-  idInput.name = "kind_ids[]";
-  idInput.value = id;
-
-  const removeBtn = document.createElement("button");
-  removeBtn.type = "button";
-  removeBtn.textContent = "✖";
-  removeBtn.className = "remove-kind";
-  removeBtn.style.marginLeft = "6px";
-
-  removeBtn.onclick = () => {
+  row.querySelector(".remove-kind").onclick = () => {
     if (id && canDelete === false) {
-      showErrorPopup("Dit kind kan niet verwijderd worden omdat er betalingen zijn.");
+      showSmallErrorPopup("Dit kind kan niet verwijderd worden omdat er betalingen zijn.");
     } else {
       row.remove();
     }
   };
 
-  row.appendChild(nameInput);
-  row.appendChild(dateInput);
-  row.appendChild(idInput);
-  row.appendChild(removeBtn);
-
   container.appendChild(row);
 }
-function openAddPopup() {
-  const container = document.getElementById("add-children-container");
-  container.innerHTML = "";
-  addChildRow("add-children-container");
 
+// ——— Popup openen ———
+function openAddPopup() {
+  document.getElementById("add-children-container").innerHTML = "";
+  addChildRow("add-children-container");
   document.getElementById("add-popup").style.display = "flex";
 }
 
 function closeAddPopup() {
   document.getElementById("add-popup").style.display = "none";
 }
-// Open bewerk-popup
+
+// ——— Bewerken ———
 function openEditPopup(btn) {
   const container = document.getElementById("edit-children-container");
   container.innerHTML = "";
 
   const id = btn.dataset.id;
-  const ids = (btn.dataset.kindIds || "").split("||");
-  const namen = (btn.dataset.kindNamen || "").split("||");
-  const datums = (btn.dataset.kindDatums || "").split("||");
-  const heeftBetalingen = (btn.dataset.kindHeeftBetalingen || "").split("||");
+  const ids = btn.dataset.kindIds.split("||");
+  const namen = btn.dataset.kindNamen.split("||");
+  const datums = btn.dataset.kindDatums.split("||");
+  const heeftBetalingen = btn.dataset.kindHeeftBetalingen.split("||");
 
   document.getElementById("edit-voornaam").value = btn.dataset.voornaam;
   document.getElementById("edit-achternaam").value = btn.dataset.achternaam;
   document.getElementById("edit-email").value = btn.dataset.email;
-
   document.getElementById("edit-straat").value = btn.dataset.straat;
   document.getElementById("edit-huisnummer").value = btn.dataset.huisnummer;
   document.getElementById("edit-postcode").value = btn.dataset.postcode;
   document.getElementById("edit-gemeente").value = btn.dataset.gemeente;
   document.getElementById("edit-land").value = btn.dataset.land;
 
-  if (namen.length === 1 && namen[0] === "") {
-        addChildRow("edit-children-container");
-    } else {
-        namen.forEach((naam, idx) => {
-    // Kan verwijderen, TENZIJ de betalingsstatus "True" is
-    const heeftBetaald = heeftBetalingen[idx] === "True";
-
-    // De inverse: canDelete is True als er NIET betaald is
-    const canDelete = !heeftBetaald; 
-    
-    // Stuur de berekende canDelete status mee naar de rij
+  namen.forEach((naam, idx) => {
+    const canDelete = !(heeftBetalingen[idx] === "True");
     addChildRow("edit-children-container", naam, datums[idx], ids[idx], canDelete);
-});
-    }
+  });
 
   document.getElementById("edit-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("edit-popup").style.display = "flex";
 }
 
-// Sluit edit-popup
 function closeEditPopup() {
   document.getElementById("edit-popup").style.display = "none";
 }
+
 </script>
 
 {% endblock %}
