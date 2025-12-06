@@ -147,10 +147,25 @@ table th {
     background: #e2e8f0;
 }
 
-.status-beschikbaar { color: #0c7a00; font-weight: bold; }
-.status-verhuurd { color: #c40000; font-weight: bold; }
-.status-onderhoud { color: #d98600; font-weight: bold; }
+td.status-beschikbaar {
+    color: #0c7a00 !important;
+    font-weight: bold;
+}
 
+td.status-uitgeleend {
+    color: #c40000 !important;
+    font-weight: bold;
+}
+
+td.status-op_onderhoud {
+    color: #d98600 !important;
+    font-weight: bold;
+}
+
+td.status-gearchiveerd {
+    color: #6b7280 !important;
+    font-weight: bold;
+}
 /* -----------------------------------
    FORM ELEMENTS
 ----------------------------------- */

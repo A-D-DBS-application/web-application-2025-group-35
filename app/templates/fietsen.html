@@ -33,8 +33,8 @@
             <td>{{ f.merk }}</td>
             <td>{{ f.model }}</td>
 
-            <!-- DE ENIGE JUISTE CLASS-GENERATOR -->
-            <td class="status-{{ f.status.name | lower }}">
+            <!-- FIXED CLASS-GENERATOR -->
+            <td class="status-{{ f.status.value | lower | replace(' ', '_') }}">
                 {{ f.status.value }}
             </td>
 
