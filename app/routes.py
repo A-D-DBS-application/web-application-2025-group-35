@@ -11,7 +11,10 @@ from .models import (
 from .algorithm import fietsen_voor_leeftijd
 from .services import (
     update_kinderen, set_fiets_verhuurd,
-    set_fiets_beschikbaar, verleng_verhuur
+    set_fiets_beschikbaar, verleng_verhuur, paginatie, 
+    filter_fietsen_query, filter_klanten_query,
+    prepare_klant_kind_data,
+    get_enum_or_none,parse_date_form,validate_and_parse_extension_date
 )
 
 main = Blueprint("main", __name__)
@@ -55,20 +58,19 @@ def logout():
     flash("Uitgelogd", "info")
     return redirect("/login")
 
-
 # ---------------------- KLANTEN ----------------------
-@main.route("/klanten") # DIT IS DE FUNCTIE DIE DE PAGINA EN KNOPPEN LAADT
+@main.route("/klanten")
 @rol_required(["depotmedewerker", "financieel"])
 def klanten():
-    verantwoordelijken = Verantwoordelijke.query.all()
-    
-    # 💡 CORRECT: Bepaal de status voordat de template wordt gerenderd
+    page = request.args.get("page", 1, type=int)
+    search_query = request.args.get("q", "").strip() 
+    query = Verantwoordelijke.query.order_by(Verantwoordelijke.achternaam.asc())
+    query = filter_klanten_query(query, search_query)
+    verantwoordelijken, total, pages = paginatie(query, page)
     for v in verantwoordelijken:
         for k in v.kinderen:
-            k.heeft_betalingen = bool(k.betalingen) # Voeg True/False toe aan het Kind object
-            
-    return render_template("klanten.html", verantwoordelijken=verantwoordelijken)
-
+            k.heeft_betalingen = bool(k.betalingen)
+    return render_template("klanten.html",verantwoordelijken=verantwoordelijken,page=page,pages=pages,)
 
 @main.post("/klanten/toevoegen")
 @rol_required(["depotmedewerker", "financieel"])
@@ -78,8 +80,7 @@ def klant_toevoegen():
         huisnummer=request.form.get("huisnummer"),
         postcode=request.form.get("postcode"),
         gemeente=request.form.get("gemeente"),
-        land=request.form.get("land"),
-    )
+        land=request.form.get("land"),)
     db.session.add(adres)
     db.session.flush()
 
@@ -87,11 +88,9 @@ def klant_toevoegen():
         voornaam=request.form.get("voornaam"),
         achternaam=request.form.get("achternaam"),
         email=request.form.get("email"),
-        adres_id=adres.adres_id,
-    )
+        adres_id=adres.adres_id,)
     db.session.add(klant)
     db.session.flush()
-
     for naam, datum in zip(request.form.getlist("kind_namen[]"),
                            request.form.getlist("kind_datums[]")):
         if naam.strip():
@@ -106,7 +105,6 @@ def klant_toevoegen():
 @rol_required(["depotmedewerker", "financieel"])
 def klant_bewerken(id):
     klant = Verantwoordelijke.query.get_or_404(id)
-
     # update klant + adres
     klant.voornaam = request.form.get("voornaam")
     klant.achternaam = request.form.get("achternaam")
@@ -126,9 +124,7 @@ def klant_bewerken(id):
         klant,
         request.form.getlist("kind_ids[]"),
         request.form.getlist("kind_namen[]"),
-        request.form.getlist("kind_datums[]"),
-    )
-
+        request.form.getlist("kind_datums[]"),)
     db.session.commit()
     return redirect("/klanten")
 
@@ -137,13 +133,28 @@ def klant_bewerken(id):
 @main.route("/fietsen")
 @rol_required(["depotmedewerker", "financieel"])
 def fietsen():
-    fietsen = Item.query.order_by(nulls_last(Item.leeftijdscategorie)).all()
+    page = request.args.get("page", 1, type=int)
+    search_query = request.args.get("q", "").strip()
+    leeftijd_filter = request.args.get("leeftijdscategorie")
+    status_filter = request.args.get("status_filter")
+    query = Item.query.order_by(nulls_last(Item.leeftijdscategorie))
+    if search_query:
+        query = filter_fietsen_query(query, search_query) 
+    leeftijd_enum = get_enum_or_none(LeeftijdEnum, leeftijd_filter)
+    if leeftijd_enum:
+        query = query.filter(Item.leeftijdscategorie == leeftijd_enum)
+    elif leeftijd_filter:
+        flash("Ongeldige leeftijdscategorie geselecteerd.", "error")
+    status_enum = get_enum_or_none(StatusEnum, status_filter)
+    if status_enum:
+        query = query.filter(Item.status == status_enum)
+    elif status_filter:
+        flash("Ongeldige status geselecteerd.", "error")
+    fietsen, total, pages = paginatie(query, page)
     beschikbaar = Item.query.filter_by(status=StatusEnum.BESCHIKBAAR).count()
-    return render_template("fietsen.html",
-                           fietsen=fietsen,
-                           beschikbare_fietsen=beschikbaar,
-                           StatusEnum=StatusEnum,
-                           LeeftijdEnum=LeeftijdEnum)
+    return render_template("fietsen.html",fietsen=fietsen, beschikbare_fietsen=beschikbaar,StatusEnum=StatusEnum,LeeftijdEnum=LeeftijdEnum,
+        page=page,
+        pages=pages,)
 
 
 @main.post("/fietsen/toevoegen")
@@ -154,7 +165,7 @@ def fiets_toevoegen():
         merk=request.form["merk"],
         model=request.form["model"],
         status=StatusEnum[request.form["status"]],
-        leeftijdscategorie=LeeftijdEnum[leeftijd] if leeftijd else None,
+        leeftijdscategorie=get_enum_or_none(LeeftijdEnum, request.form.get("leeftijd")),
     )
     db.session.add(fiets)
     db.session.commit()
@@ -173,8 +184,8 @@ def fiets_bewerken(itemnr):
     fiets.merk = request.form["merk"]
     fiets.model = request.form["model"]
 
-    leeftijd = request.form.get("leeftijd")
-    fiets.leeftijdscategorie = LeeftijdEnum[leeftijd] if leeftijd else None
+    fiets.leeftijdscategorie=get_enum_or_none(LeeftijdEnum, request.form.get("leeftijd")),
+    
 
     db.session.commit()
     return redirect("/fietsen")
@@ -211,30 +222,22 @@ def api_lopende_verhuur(kind_id):
 @main.route("/verhuur")
 @rol_required(["depotmedewerker", "financieel"])
 def verhuur():
-    verantwoordelijken = Verantwoordelijke.query.all()
-
-    klant_kind_data = {
-        v.verantwoordelijke_id: [{
-            "id": k.kind_id,
-            "naam": k.naam,
-            "leeftijd": k.leeftijd,
-            "geboortedatum": k.geboortedatum.isoformat(),
-        } for k in v.kinderen]
-        for v in verantwoordelijken
-    }
-
+    page = request.args.get("page", 1, type=int)
+    verantwoordelijken, klant_kind_data = prepare_klant_kind_data()
+    query = Verhuur.query.order_by(Verhuur.startdatum.desc())
+    verhuur_lijst, total, pages = paginatie(query, page)
     actief = Verhuur.query.filter_by(status=VerhuurStatusEnum.ACTIEF.value).count()
-
     return render_template(
         "verhuur.html",
-        verhuur_lijst=Verhuur.query.order_by(Verhuur.startdatum.desc()).all(),
+        verhuur_lijst=verhuur_lijst,
         totaal_actief=actief,
         verantwoordelijken=verantwoordelijken,
         beschikbare_fietsen=Item.query.filter_by(status=StatusEnum.BESCHIKBAAR).all(),
         klant_kind_data=klant_kind_data,
         VerhuurStatusEnum=VerhuurStatusEnum,
+        page=page,
+        pages=pages,
     )
-
 
 @main.post("/verhuur/toevoegen")
 @rol_required(["depotmedewerker", "financieel"])
@@ -243,8 +246,8 @@ def verhuur_toevoegen():
         itemnr=request.form.get("itemnr", type=int),
         kind_id=request.form.get("kind_id", type=int),
         verantwoordelijke_id=request.form.get("verantwoordelijke_id", type=int),
-        startdatum=datetime.strptime(request.form["startdatum"], "%Y-%m-%d").date(),
-        einddatum=datetime.strptime(request.form["einddatum"], "%Y-%m-%d").date(),
+        startdatum=parse_date_form(request.form["startdatum"]),
+        einddatum=parse_date_form(request.form["einddatum"]),
         status=VerhuurStatusEnum.ACTIEF.value,
     )
     db.session.add(verh)
@@ -279,18 +282,10 @@ def verhuur_verleng(verhuur_id):
     if verh.status != VerhuurStatusEnum.ACTIEF.value:
         flash("Alleen actieve verhuur kan verlengd worden.", "error")
         return redirect("/verhuur")
-
-    try:
-        nieuwe = datetime.strptime(request.form["nieuwe_einddatum"], "%Y-%m-%d").date()
-    except:
-        flash("Ongeldige datum.", "error")
-        return redirect("/verhuur")
-
-    if nieuwe <= verh.einddatum:
-        flash("Nieuwe einddatum moet later zijn.", "error")
-        return redirect("/verhuur")
-
-    verleng_verhuur(verh, nieuwe)
+    redirect_response, nieuwe_datum = validate_and_parse_extension_date(request.form["nieuwe_einddatum"], verh.einddatum)
+    if redirect_response:
+        return redirect_response 
+    verleng_verhuur(verh, nieuwe_datum)
     flash("Verhuur verlengd.", "success")
     return redirect("/verhuur")
 
@@ -299,17 +294,12 @@ def verhuur_verleng(verhuur_id):
 @main.route("/financieel")
 @rol_required(["financieel"])
 def financieel():
-    verantwoordelijken = Verantwoordelijke.query.all()
+    page = request.args.get("page", 1, type=int)
 
-    klant_kind_data = {
-        v.verantwoordelijke_id: [{
-            "id": k.kind_id,
-            "naam": k.naam,
-            "leeftijd": k.leeftijd,
-            "geboortedatum": k.geboortedatum.isoformat(),
-        } for k in v.kinderen]
-        for v in verantwoordelijken
-    }
+    query = Betaling.query.order_by(Betaling.datum.desc())
+    betalingen, total, pages = paginatie(query, page)
+
+    verantwoordelijken, klant_kind_data = prepare_klant_kind_data()
 
     niet_voltooid = Betaling.query.filter_by(
         betalingswijze=BetalingswijzeEnum.OVERSCHRIJVEN_NIET_VOLDAAN
@@ -317,14 +307,15 @@ def financieel():
 
     return render_template(
         "financieel.html",
-        betalingen=Betaling.query.order_by(Betaling.datum.desc()).all(),
+        betalingen=betalingen,
         fietsen=Item.query.all(),
         verantwoordelijken=verantwoordelijken,
         klant_kind_data=klant_kind_data,
         BetalingswijzeEnum=BetalingswijzeEnum,
         niet_voltooid=niet_voltooid,
+        page=page,
+        pages=pages,
     )
-
 
 @main.post("/financieel/toevoegen")
 @rol_required(["financieel"])
@@ -334,7 +325,7 @@ def betaling_toevoegen():
         kind_id=request.form.get("kind_id", type=int),
         betalingswijze=BetalingswijzeEnum[request.form.get("betalingswijze")],
         bedrag=float(request.form.get("bedrag")),
-        datum=datetime.strptime(request.form.get("datum"), "%Y-%m-%d").date(),
+        datum=parse_date_form(request.form.get("datum")),
         tijd=datetime.now().time()
     )
     db.session.add(betaling)

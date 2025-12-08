@@ -1,8 +1,6 @@
 {% extends 'index.html' %}
 {% set title = "Klanten - Bike Lending Portaal" %}
-
 {% block main_content %}
-
 <h1 class="mb-3">Klanten</h1>
 
 <p class="fw-bold mb-3">Aantal klanten: {{ verantwoordelijken|length }}</p>
@@ -10,7 +8,19 @@
 <button class="btn-add mb-3" onclick="openAddPopup()">Nieuwe klant</button>
 
 <div class="mb-3">
-    <input type="text" id="search" class="form-control" placeholder="Zoek klant..." onkeyup="filterKlanten()">
+        <form id="search-form" method="GET" action="{{ url_for('main.klanten') }}">
+        <div class="d-flex">
+            <input type="text" 
+                   name="q" 
+                   id="search" 
+                   class="form-control" 
+                   placeholder="Zoek klant..." 
+                   value="{{ request.args.get('q', '') }}"
+                   
+                   onkeyup="searchKlanten(event)">
+
+            </div>
+    </form>
 </div>
 
 <table class="table table-bordered table-striped bg-white">
@@ -77,7 +87,7 @@
     {% endfor %}
   </tbody>
 </table>
-
+{% include "paginatie.html" %}
 {% endblock %}
 
 {% block popup %}
@@ -184,13 +194,6 @@
 
 <script>
 
-// ———  Filtering ———
-function filterKlanten() {
-  const q = document.getElementById("search").value.toLowerCase();
-  document.querySelectorAll("#klanten-body tr").forEach(row =>
-    row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none"
-  );
-}
 // ——— Kleine error popup ———
 function closeSmallErrorPopup() {
   document.getElementById("small-error-popup").style.display = "none";
@@ -270,6 +273,31 @@ function closeEditPopup() {
   document.getElementById("edit-popup").style.display = "none";
 }
 
+let searchTimer;
+
+// ——— Zoeken tijdens typen ———
+function searchKlanten(event) {
+    const form = document.getElementById("search-form");
+    const input = document.getElementById("search");
+    
+    // 1. ENTER verstuurt direct
+    if (event.key === 'Enter') {
+        event.preventDefault(); // 
+        form.submit();
+        return;
+    }
+
+    // 2. Zoekopdracht vertragen (debouncing)
+    clearTimeout(searchTimer);
+    
+    // Zoeken: Bij 0 karakters (alles wissen), of bij 3 of meer karakters
+    if (input.value.length >= 3 || input.value.length === 0) {
+        searchTimer = setTimeout(() => {
+            // Verstuurt het formulier
+            form.submit();
+        }, 700); 
+    }
+}
 </script>
 
 {% endblock %}
