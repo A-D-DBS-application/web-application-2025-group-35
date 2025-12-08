@@ -220,9 +220,7 @@
 </script>
 
 <script>
-/* ================================
-   JAVASCRIPT — volledig werkend
-================================ */
+
 
 const KLANT_KIND_DATA = JSON.parse(document.getElementById("klant-kind-data").textContent);
 
@@ -287,13 +285,17 @@ function updateKindList() {
     row.style.display = "flex";
     row.style.alignItems = "center";
     row.style.marginTop = "4px";
+    // De aanpassing om links uit te lijnen:
+    row.style.justifyContent = "flex-start"; // Zorgt voor links uitlijning
+    row.style.width = "100%"; // Zorgt ervoor dat de rij de volledige breedte gebruikt
 
     const radio = document.createElement("input");
     radio.type = "radio";
     radio.name = "kind_id";
     radio.value = child.id;
     radio.required = true;
-
+    radio.style.width = "auto"; // Zorg dat de radio button niet de volledige breedte inneemt
+    radio.style.marginTop = "12px";
     radio.addEventListener("change", () => laadFietsAdvies(child.id));
 
     const label = document.createElement("label");
