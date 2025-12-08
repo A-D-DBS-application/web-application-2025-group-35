@@ -83,7 +83,7 @@
 {% block popup %}
 
 <!-- Kleine Error Popup -->
-<div id="small-error-popup" class="popup-overlay" style="display:none;">
+<div id="small-error-popup" class="popup-overlay" style="display:none; z-index:9999">
   <div class="popup-box text-center" style="max-width: 400px;">
     <p id="small-error-message" class="fw-bold text-danger mb-2"></p>
     <button type="button" class="btn-cancel mt-2" onclick="closeSmallErrorPopup()">Sluiten</button>
@@ -184,14 +184,13 @@
 
 <script>
 
-// ——— Filtering ———
+// ———  Filtering ———
 function filterKlanten() {
   const q = document.getElementById("search").value.toLowerCase();
   document.querySelectorAll("#klanten-body tr").forEach(row =>
     row.style.display = row.innerText.toLowerCase().includes(q) ? "" : "none"
   );
 }
-
 // ——— Kleine error popup ———
 function closeSmallErrorPopup() {
   document.getElementById("small-error-popup").style.display = "none";

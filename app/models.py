@@ -81,6 +81,7 @@ class Kind(db.Model):
     verantwoordelijke_id = db.Column(db.Integer, db.ForeignKey("verantwoordelijke.verantwoordelijke_id"), nullable=False)
 
     betalingen = db.relationship("Betaling", backref="kind", lazy=True)
+    verhuren = db.relationship("Verhuur", backref="kind", lazy=True)
 
     @property
     def leeftijd(self):
@@ -112,6 +113,7 @@ class Item(db.Model):
     )
 
     betalingen = db.relationship("Betaling", backref="item", lazy=True)
+    verhuren = db.relationship("Verhuur", backref="item", lazy=True)
 
 
 class Betaling(db.Model):
@@ -159,6 +161,5 @@ class Verhuur(db.Model):
         default=VerhuurStatusEnum.ACTIEF.value
     )
 
-    item = db.relationship("Item")
-    kind = db.relationship("Kind")
-    # ❌ verwijderd: verantwoordelijke = db.relationship("Verantwoordelijke")
+    
+    
