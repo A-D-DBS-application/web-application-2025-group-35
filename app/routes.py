@@ -11,10 +11,10 @@ from .models import (
 from .algorithm import fietsen_voor_leeftijd
 from .services import (
     update_kinderen, set_fiets_verhuurd,
-    set_fiets_beschikbaar, verleng_verhuur, paginatie, 
+    set_fiets_beschikbaar, verleng_verhuur, paginatie,
     filter_fietsen_query, filter_klanten_query,
     prepare_klant_kind_data,
-    get_enum_or_none,parse_date_form,validate_and_parse_extension_date
+    get_enum_or_none, parse_date_form, validate_and_parse_extension_date
 )
 
 main = Blueprint("main", __name__)
@@ -58,19 +58,27 @@ def logout():
     flash("Uitgelogd", "info")
     return redirect("/login")
 
+
 # ---------------------- KLANTEN ----------------------
 @main.route("/klanten")
 @rol_required(["depotmedewerker", "financieel"])
 def klanten():
     page = request.args.get("page", 1, type=int)
-    search_query = request.args.get("q", "").strip() 
+    search_query = request.args.get("q", "").strip()
     query = Verantwoordelijke.query.order_by(Verantwoordelijke.achternaam.asc())
     query = filter_klanten_query(query, search_query)
     verantwoordelijken, total, pages = paginatie(query, page)
+
     for v in verantwoordelijken:
         for k in v.kinderen:
             k.heeft_betalingen = bool(k.betalingen)
-    return render_template("klanten.html",verantwoordelijken=verantwoordelijken,page=page,pages=pages,)
+
+    return render_template(
+        "klanten.html",
+        verantwoordelijken=verantwoordelijken,
+        page=page,
+        pages=pages,
+    )
 
 @main.post("/klanten/toevoegen")
 @rol_required(["depotmedewerker", "financieel"])
@@ -80,7 +88,8 @@ def klant_toevoegen():
         huisnummer=request.form.get("huisnummer"),
         postcode=request.form.get("postcode"),
         gemeente=request.form.get("gemeente"),
-        land=request.form.get("land"),)
+        land=request.form.get("land"),
+    )
     db.session.add(adres)
     db.session.flush()
 
@@ -88,14 +97,23 @@ def klant_toevoegen():
         voornaam=request.form.get("voornaam"),
         achternaam=request.form.get("achternaam"),
         email=request.form.get("email"),
-        adres_id=adres.adres_id,)
+        adres_id=adres.adres_id,
+    )
     db.session.add(klant)
     db.session.flush()
-    for naam, datum in zip(request.form.getlist("kind_namen[]"),
-                           request.form.getlist("kind_datums[]")):
+
+    for naam, datum in zip(
+        request.form.getlist("kind_namen[]"),
+        request.form.getlist("kind_datums[]"),
+    ):
         if naam.strip():
-            db.session.add(Kind(naam=naam, geboortedatum=datum,
-                                verantwoordelijke_id=klant.verantwoordelijke_id))
+            db.session.add(
+                Kind(
+                    naam=naam,
+                    geboortedatum=datum,
+                    verantwoordelijke_id=klant.verantwoordelijke_id,
+                )
+            )
 
     db.session.commit()
     return redirect("/klanten")
@@ -105,7 +123,7 @@ def klant_toevoegen():
 @rol_required(["depotmedewerker", "financieel"])
 def klant_bewerken(id):
     klant = Verantwoordelijke.query.get_or_404(id)
-    # update klant + adres
+
     klant.voornaam = request.form.get("voornaam")
     klant.achternaam = request.form.get("achternaam")
     klant.email = request.form.get("email")
@@ -124,7 +142,9 @@ def klant_bewerken(id):
         klant,
         request.form.getlist("kind_ids[]"),
         request.form.getlist("kind_namen[]"),
-        request.form.getlist("kind_datums[]"),)
+        request.form.getlist("kind_datums[]"),
+    )
+
     db.session.commit()
     return redirect("/klanten")
 
@@ -137,35 +157,61 @@ def fietsen():
     search_query = request.args.get("q", "").strip()
     leeftijd_filter = request.args.get("leeftijdscategorie")
     status_filter = request.args.get("status_filter")
+
     query = Item.query.order_by(nulls_last(Item.leeftijdscategorie))
+
     if search_query:
-        query = filter_fietsen_query(query, search_query) 
+        query = filter_fietsen_query(query, search_query)
+
     leeftijd_enum = get_enum_or_none(LeeftijdEnum, leeftijd_filter)
     if leeftijd_enum:
         query = query.filter(Item.leeftijdscategorie == leeftijd_enum)
     elif leeftijd_filter:
         flash("Ongeldige leeftijdscategorie geselecteerd.", "error")
+
     status_enum = get_enum_or_none(StatusEnum, status_filter)
     if status_enum:
         query = query.filter(Item.status == status_enum)
     elif status_filter:
         flash("Ongeldige status geselecteerd.", "error")
+
     fietsen, total, pages = paginatie(query, page)
     beschikbaar = Item.query.filter_by(status=StatusEnum.BESCHIKBAAR).count()
-    return render_template("fietsen.html",fietsen=fietsen, beschikbare_fietsen=beschikbaar,StatusEnum=StatusEnum,LeeftijdEnum=LeeftijdEnum,
+
+    return render_template(
+        "fietsen.html",
+        fietsen=fietsen,
+        beschikbare_fietsen=beschikbaar,
+        StatusEnum=StatusEnum,
+        LeeftijdEnum=LeeftijdEnum,
         page=page,
-        pages=pages,)
+        pages=pages,
+    )
+
+
+# ✅ GET-formulier toevoegen
+@main.get("/fietsen/toevoegen")
+@rol_required(["depotmedewerker", "financieel"])
+def fiets_toevoegen_form():
+    return render_template(
+        "fiets_toevoegen.html",
+        StatusEnum=StatusEnum,
+        LeeftijdEnum=LeeftijdEnum,
+    )
 
 
 @main.post("/fietsen/toevoegen")
 @rol_required(["depotmedewerker", "financieel"])
 def fiets_toevoegen():
-    leeftijd = request.form.get("leeftijd")
     fiets = Item(
-        merk=request.form["merk"],
-        model=request.form["model"],
-        status=StatusEnum[request.form["status"]],
-        leeftijdscategorie=get_enum_or_none(LeeftijdEnum, request.form.get("leeftijd")),
+        itemnr=request.form.get("itemnr", type=int),
+        merk=request.form.get("merk"),
+        model=request.form.get("model"),
+        status=StatusEnum[request.form.get("status")],
+        leeftijdscategorie=get_enum_or_none(
+            LeeftijdEnum,
+            request.form.get("leeftijdscategorie"),
+        ),
     )
     db.session.add(fiets)
     db.session.commit()
@@ -176,16 +222,16 @@ def fiets_toevoegen():
 @rol_required(["depotmedewerker", "financieel"])
 def fiets_bewerken(itemnr):
     fiets = Item.query.get_or_404(itemnr)
-    nieuwe_status = StatusEnum[request.form["status"]]
+    nieuwe_status = StatusEnum[request.form.get("status")]
 
     if fiets.status != StatusEnum.VERHUURD:
         fiets.status = nieuwe_status
 
-    fiets.merk = request.form["merk"]
-    fiets.model = request.form["model"]
-
-    fiets.leeftijdscategorie=get_enum_or_none(LeeftijdEnum, request.form.get("leeftijd")),
-    
+    fiets.merk = request.form.get("merk")
+    fiets.model = request.form.get("model")
+    fiets.leeftijdscategorie = get_enum_or_none(
+        LeeftijdEnum, request.form.get("leeftijdscategorie")
+    )
 
     db.session.commit()
     return redirect("/fietsen")
@@ -206,15 +252,23 @@ def fiets_archiveren(itemnr):
 def api_fietsen_advies(kind_id):
     kind = Kind.query.get_or_404(kind_id)
     fietsen = fietsen_voor_leeftijd(kind)
-    return [{"itemnr": f.itemnr, "omschrijving": f"{f.merk} {f.model}", "score": score}
-            for score, f in fietsen]
+    return [
+        {
+            "itemnr": f.itemnr,
+            "omschrijving": f"{f.merk} {f.model}",
+            "score": score,
+        }
+        for score, f in fietsen
+    ]
 
 
 @main.get("/api/kind/<int:kind_id>/lopende_verhuur")
 @rol_required(["depotmedewerker", "financieel"])
 def api_lopende_verhuur(kind_id):
-    aantal = Verhuur.query.filter_by(kind_id=kind_id,
-                                     status=VerhuurStatusEnum.ACTIEF.value).count()
+    aantal = Verhuur.query.filter_by(
+        kind_id=kind_id,
+        status=VerhuurStatusEnum.ACTIEF.value,
+    ).count()
     return {"aantal": aantal}
 
 
@@ -224,20 +278,28 @@ def api_lopende_verhuur(kind_id):
 def verhuur():
     page = request.args.get("page", 1, type=int)
     verantwoordelijken, klant_kind_data = prepare_klant_kind_data()
+
     query = Verhuur.query.order_by(Verhuur.startdatum.desc())
     verhuur_lijst, total, pages = paginatie(query, page)
-    actief = Verhuur.query.filter_by(status=VerhuurStatusEnum.ACTIEF.value).count()
+
+    actief = Verhuur.query.filter_by(
+        status=VerhuurStatusEnum.ACTIEF.value
+    ).count()
+
     return render_template(
         "verhuur.html",
         verhuur_lijst=verhuur_lijst,
         totaal_actief=actief,
         verantwoordelijken=verantwoordelijken,
-        beschikbare_fietsen=Item.query.filter_by(status=StatusEnum.BESCHIKBAAR).all(),
+        beschikbare_fietsen=Item.query.filter_by(
+            status=StatusEnum.BESCHIKBAAR
+        ).all(),
         klant_kind_data=klant_kind_data,
         VerhuurStatusEnum=VerhuurStatusEnum,
         page=page,
         pages=pages,
     )
+
 
 @main.post("/verhuur/toevoegen")
 @rol_required(["depotmedewerker", "financieel"])
@@ -245,9 +307,11 @@ def verhuur_toevoegen():
     verh = Verhuur(
         itemnr=request.form.get("itemnr", type=int),
         kind_id=request.form.get("kind_id", type=int),
-        verantwoordelijke_id=request.form.get("verantwoordelijke_id", type=int),
-        startdatum=parse_date_form(request.form["startdatum"]),
-        einddatum=parse_date_form(request.form["einddatum"]),
+        verantwoordelijke_id=request.form.get(
+            "verantwoordelijke_id", type=int
+        ),
+        startdatum=parse_date_form(request.form.get("startdatum")),
+        einddatum=parse_date_form(request.form.get("einddatum")),
         status=VerhuurStatusEnum.ACTIEF.value,
     )
     db.session.add(verh)
@@ -282,9 +346,14 @@ def verhuur_verleng(verhuur_id):
     if verh.status != VerhuurStatusEnum.ACTIEF.value:
         flash("Alleen actieve verhuur kan verlengd worden.", "error")
         return redirect("/verhuur")
-    redirect_response, nieuwe_datum = validate_and_parse_extension_date(request.form["nieuwe_einddatum"], verh.einddatum)
+
+    redirect_response, nieuwe_datum = validate_and_parse_extension_date(
+        request.form.get("nieuwe_einddatum"),
+        verh.einddatum,
+    )
     if redirect_response:
-        return redirect_response 
+        return redirect_response
+
     verleng_verhuur(verh, nieuwe_datum)
     flash("Verhuur verlengd.", "success")
     return redirect("/verhuur")
@@ -317,35 +386,46 @@ def financieel():
         pages=pages,
     )
 
+
 @main.post("/financieel/toevoegen")
 @rol_required(["financieel"])
 def betaling_toevoegen():
     betaling = Betaling(
         itemnr=request.form.get("itemnr", type=int),
         kind_id=request.form.get("kind_id", type=int),
-        betalingswijze=BetalingswijzeEnum[request.form.get("betalingswijze")],
+        betalingswijze=BetalingswijzeEnum[
+            request.form.get("betalingswijze")
+        ],
         bedrag=float(request.form.get("bedrag")),
         datum=parse_date_form(request.form.get("datum")),
-        tijd=datetime.now().time()
+        tijd=datetime.now().time(),
     )
     db.session.add(betaling)
     db.session.commit()
     flash("Betaling toegevoegd.", "success")
     return redirect("/financieel")
 
+
 @main.post("/financieel/bewerken/<int:betaling_id>")
 @rol_required(["financieel"])
 def betaling_bewerken(betaling_id):
     betaling = Betaling.query.get_or_404(betaling_id)
+
     betaling.itemnr = request.form.get("itemnr", type=int)
     betaling.kind_id = request.form.get("kind_id", type=int)
-    betaling.betalingswijze = BetalingswijzeEnum[request.form.get("betalingswijze")]
+    betaling.betalingswijze = BetalingswijzeEnum[
+        request.form.get("betalingswijze")
+    ]
     betaling.bedrag = float(request.form.get("bedrag"))
-    betaling.datum = datetime.strptime(request.form.get("datum"), "%Y-%m-%d").date()
+    betaling.datum = datetime.strptime(
+        request.form.get("datum"), "%Y-%m-%d"
+    ).date()
     betaling.tijd = datetime.now().time()
+
     db.session.commit()
     flash(f"Betaling {betaling_id} aangepast.", "success")
     return redirect("/financieel")
+
 
 # ---------------------- VOORSPELLING ----------------------
 @main.route("/voorspelling")
@@ -356,4 +436,7 @@ def voorspelling():
         voorspelling_data = voorspelde_drukte()
     except:
         voorspelling_data = {}
-    return render_template("voorspelling.html", voorspelling=voorspelling_data)
+    return render_template(
+        "voorspelling.html",
+        voorspelling=voorspelling_data,
+    )
