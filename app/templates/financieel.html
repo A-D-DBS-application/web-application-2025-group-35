@@ -30,7 +30,7 @@
       <td>{{ "%05d" % b.id }}</td>
 
       <!-- KLANT -->
-      <td class="text-start">
+<td class="text-start">
         {% if b.kind and b.kind.verantwoordelijke %}
         <button
           type="button"
@@ -44,6 +44,7 @@
           data-postcode="{{ b.kind.verantwoordelijke.adres.postcode }}"
           data-gemeente="{{ b.kind.verantwoordelijke.adres.gemeente }}"
           data-land="{{ b.kind.verantwoordelijke.adres.land }}"
+          data-kind-ids="{{ b.kind.verantwoordelijke.kinderen|map(attribute='kind_id')|join('||') }}"
           data-kind-namen="{{ b.kind.verantwoordelijke.kinderen|map(attribute='naam')|join('||') }}"
           data-kind-datums="{{ b.kind.verantwoordelijke.kinderen|map(attribute='geboortedatum')|join('||') }}"
           onclick="openKlantPopup(this)"
@@ -53,7 +54,6 @@
         </button>
         {% else %}-{% endif %}
       </td>
-
       <!-- KIND -->
       <td>
         {% if b.kind %}
@@ -200,51 +200,7 @@
 </div>
 
 <!-- ================== KLANT POPUP ================== -->
-<div id="klant-popup" class="popup-overlay">
-  <form id="klant-form" class="popup-box" method="POST">
-    <h3 class="mb-3">Klantgegevens</h3>
-
-    <label class="form-label">Voornaam</label>
-    <input type="text" name="voornaam" id="klant-voornaam" class="form-control mb-2" required>
-
-    <label class="form-label">Achternaam</label>
-    <input type="text" name="achternaam" id="klant-achternaam" class="form-control mb-2" required>
-
-    <label class="form-label">Email</label>
-    <input type="email" name="email" id="klant-email" class="form-control mb-2" required>
-
-    <label class="form-label">Straat</label>
-    <input type="text" name="straat" id="klant-straat" class="form-control mb-2" required>
-
-    <label class="form-label">Huisnummer</label>
-    <input type="text" name="huisnummer" id="klant-huisnummer" class="form-control mb-2" required>
-
-    <label class="form-label">Postcode</label>
-    <input type="number" name="postcode" id="klant-postcode" class="form-control mb-2" required>
-
-    <label class="form-label">Gemeente</label>
-    <input type="text" name="gemeente" id="klant-gemeente" class="form-control mb-2" required>
-
-    <label class="form-label">Land</label>
-    <input type="text" name="land" id="klant-land" class="form-control mb-3" required>
-
-    <hr>
-
-    <label class="form-label">Kinderen</label>
-    <div id="klant-children-container" class="mb-2"></div>
-
-    <button type="button" class="btn-add mb-3" onclick="addChildRow('klant-children-container')">
-      Kind toevoegen
-    </button>
-
-    <div class="d-flex justify-content-between">
-      <button type="button" class="btn-cancel" onclick="closeKlantPopup()">Annuleren</button>
-      <button type="submit" class="btn-save">Opslaan</button>
-    </div>
-
-  </form>
-</div>
-
+{% include "klant_popup.html" %}
 <!-- SCRIPTS  -->
 <script>
 
@@ -305,12 +261,20 @@ function editUpdateKinderList() {
   }
 }
 
-// KLANT POPUP
-function addChildRow(containerId, naam = "", datum = "") {
+function addChildRow(containerId, naam = "", datum = "", id = "", hasPayments = false) {
   const container = document.getElementById(containerId);
   const row = document.createElement("div");
   row.className = "child-row d-flex mt-2";
 
+  
+  if (id) {
+    const idInput = document.createElement("input");
+    idInput.type = "hidden";
+    idInput.name = "kind_ids[]";
+    idInput.value = id;
+    row.appendChild(idInput);
+  }
+  
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.name = "kind_namen[]";
@@ -330,8 +294,17 @@ function addChildRow(containerId, naam = "", datum = "") {
   removeBtn.type = "button";
   removeBtn.textContent = "✖";
   removeBtn.className = "remove-kind ms-2";
-  removeBtn.onclick = () => row.remove();
 
+  removeBtn.onclick = () => {
+    if (hasPayments) {
+     
+      showSmallErrorPopup(`Kind '${naam}' kan niet verwijderd worden: er zijn betalingen gekoppeld.`);
+    } else {
+   
+      row.remove();
+    }
+  };
+  
   row.appendChild(nameInput);
   row.appendChild(dateInput);
   row.appendChild(removeBtn);
@@ -339,8 +312,10 @@ function addChildRow(containerId, naam = "", datum = "") {
   container.appendChild(row);
 }
 
+
 function openKlantPopup(btn) {
   const id = btn.dataset.id;
+  const klantData = KIND_DATA[id] || [];
 
   document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
   document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
@@ -354,14 +329,18 @@ function openKlantPopup(btn) {
   const container = document.getElementById("klant-children-container");
   container.innerHTML = "";
 
-  const namen = (btn.dataset.kindNamen || "").split("||");
-  const datums = (btn.dataset.kindDatums || "").split("||");
+  if (klantData.length === 0) {
 
-  if (namen.length === 1 && namen[0] === "") {
-    addChildRow("klant-children-container");
+    addChildRow("klant-children-container", "", "", "", false); 
   } else {
-    namen.forEach((naam, idx) => addChildRow("klant-children-container", naam, datums[idx]));
+
+    klantData.forEach(k => addChildRow("klant-children-container", 
+                                        k.naam, 
+                                        k.geboortedatum || "", 
+                                        k.id, 
+                                        k.heeft_betalingen));
   }
+
 
   document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("klant-popup").style.display = "flex";
@@ -369,5 +348,4 @@ function openKlantPopup(btn) {
 
 function closeKlantPopup() { document.getElementById("klant-popup").style.display = "none"; }
 </script>
-
 {% endblock %}
