@@ -1,0 +1,61 @@
+<div id="klant-popup" class="popup-overlay">
+  <form id="klant-form" class="popup-box" method="POST">
+
+    <h3 class="mb-3">Klantgegevens</h3>
+
+    <label class="form-label">Voornaam</label>
+    <input type="text" id="klant-voornaam" name="voornaam" class="form-control mb-2" required>
+
+    <label class="form-label">Achternaam</label>
+    <input type="text" id="klant-achternaam" name="achternaam" class="form-control mb-2" required>
+
+    <label class="form-label">Email</label>
+    <input type="email" id="klant-email" name="email" class="form-control mb-3" required>
+
+    <label class="form-label">Straat</label>
+    <input type="text" id="klant-straat" name="straat" class="form-control mb-2" required>
+
+    <label class="form-label">Huisnummer</label>
+    <input type="text" id="klant-huisnummer" name="huisnummer" class="form-control mb-2" required>
+
+    <label class="form-label">Postcode</label>
+    <input type="number" id="klant-postcode" name="postcode" class="form-control mb-2" required>
+
+    <label class="form-label">Gemeente</label>
+    <input type="text" id="klant-gemeente" name="gemeente" class="form-control mb-2" required>
+
+    <label class="form-label">Land</label>
+    <input type="text" id="klant-land" name="land" class="form-control mb-3" required>
+
+    <label class="form-label">Kinderen</label>
+    <div id="klant-children-container" class="mb-2"></div>
+
+    <button type="button" class="btn-add mb-3" onclick="addChildRow('klant-children-container')">Kind toevoegen</button>
+
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn-cancel" onclick="closeKlantPopup()">Annuleren</button>
+      <button type="submit" class="btn-save">Opslaan</button>
+    </div>
+
+  </form>
+</div>
+
+<!-- Kleine fout-popup -->
+<div id="small-error-popup" class="popup-overlay" style="display:none; z-index:9999">
+  <div class="popup-box text-center" style="max-width: 350px;">
+    <p id="small-error-message" class="fw-bold text-danger mb-3"></p>
+    <button type="button" class="btn-cancel" onclick="closeSmallErrorPopup()">Sluiten</button>
+  </div>
+</div>
+
+<script>
+function showSmallErrorPopup(msg) {
+    document.getElementById("small-error-message").textContent = msg;
+    document.getElementById("small-error-popup").style.display = "flex";
+}
+
+function closeSmallErrorPopup() {
+    document.getElementById("small-error-popup").style.display = "none";
+}
+
+</script>

@@ -171,47 +171,7 @@
 </div>
 
 <!-- ================= KLANT POPUP ================= -->
-<div id="klant-popup" class="popup-overlay">
-  <form id="klant-form" class="popup-box" method="POST">
-
-    <h3 class="mb-3">Klantgegevens</h3>
-
-    <label class="form-label">Voornaam</label>
-    <input type="text" id="klant-voornaam" name="voornaam" class="form-control mb-2" required>
-
-    <label class="form-label">Achternaam</label>
-    <input type="text" id="klant-achternaam" name="achternaam" class="form-control mb-2" required>
-
-    <label class="form-label">Email</label>
-    <input type="email" id="klant-email" name="email" class="form-control mb-3" required>
-
-    <label class="form-label">Straat</label>
-    <input type="text" id="klant-straat" name="straat" class="form-control mb-2" required>
-
-    <label class="form-label">Huisnummer</label>
-    <input type="text" id="klant-huisnummer" name="huisnummer" class="form-control mb-2" required>
-
-    <label class="form-label">Postcode</label>
-    <input type="number" id="klant-postcode" name="postcode" class="form-control mb-2" required>
-
-    <label class="form-label">Gemeente</label>
-    <input type="text" id="klant-gemeente" name="gemeente" class="form-control mb-2" required>
-
-    <label class="form-label">Land</label>
-    <input type="text" id="klant-land" name="land" class="form-control mb-3" required>
-
-    <label class="form-label">Kinderen</label>
-    <div id="klant-children-container" class="mb-2"></div>
-
-    <button type="button" class="btn-add mb-3" onclick="addChildRow('klant-children-container')">Kind toevoegen</button>
-
-    <div class="d-flex justify-content-between">
-      <button type="button" class="btn-cancel" onclick="closeKlantPopup()">Annuleren</button>
-      <button type="submit" class="btn-save">Opslaan</button>
-    </div>
-
-  </form>
-</div>
+{% include "klant_popup.html" %}
 
 
 <!-- ================= DATA SCRIPTS ================= -->
@@ -240,6 +200,8 @@ function closeVerlengPopup() { document.getElementById("verleng-popup").style.di
 
 function openKlantPopup(btn) {
   const id = btn.dataset.id;
+  const klantData = KLANT_KIND_DATA[id] || [];
+
   document.getElementById("klant-voornaam").value = btn.dataset.voornaam;
   document.getElementById("klant-achternaam").value = btn.dataset.achternaam;
   document.getElementById("klant-email").value = btn.dataset.email;
@@ -252,9 +214,17 @@ function openKlantPopup(btn) {
   const container = document.getElementById("klant-children-container");
   container.innerHTML = "";
 
-  const kinderen = KLANT_KIND_DATA[id] || [];
-  if (kinderen.length === 0) addChildRow("klant-children-container");
-  else kinderen.forEach(k => addChildRow("klant-children-container", k.naam, k.geboortedatum || ""));
+  if (klantData.length === 0) {
+   
+    addChildRow("klant-children-container", "", "", "", false); 
+  } else {
+   
+    klantData.forEach(k => addChildRow("klant-children-container", 
+                                        k.naam, 
+                                        k.geboortedatum || "", 
+                                        k.id, 
+                                        k.heeft_betalingen));
+  }
 
   document.getElementById("klant-form").action = `/klanten/bewerken/${id}`;
   document.getElementById("klant-popup").style.display = "flex";
@@ -351,34 +321,50 @@ async function laadFietsAdvies(kindId) {
 
 /* ——————— Klant-kind invoer ——————— */
 
-function addChildRow(containerId, naam = "", datum = "") {
+function addChildRow(containerId, naam = "", datum = "", id = "", hasPayments = false) {
   const container = document.getElementById(containerId);
   const row = document.createElement("div");
-  row.className = "child-row";
-  row.style.display = "flex";
-  row.style.marginTop = "6px";
+  row.className = "child-row d-flex mt-2";
 
+  // Voeg verborgen input voor Kind ID toe (cruciaal voor Opslaan)
+  if (id) {
+    const idInput = document.createElement("input");
+    idInput.type = "hidden";
+    idInput.name = "kind_ids[]";
+    idInput.value = id;
+    row.appendChild(idInput);
+  }
+  
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.name = "kind_namen[]";
   nameInput.placeholder = "Naam";
   nameInput.value = naam;
   nameInput.required = true;
-  nameInput.style.flex = "1";
+  nameInput.className = "form-control";
 
   const dateInput = document.createElement("input");
   dateInput.type = "date";
   dateInput.name = "kind_datums[]";
-  dateInput.value = datum;
+  dateInput.value = datum || "";
   dateInput.required = true;
-  dateInput.style.marginLeft = "6px";
+  dateInput.className = "form-control ms-2";
 
   const removeBtn = document.createElement("button");
   removeBtn.type = "button";
   removeBtn.textContent = "✖";
-  removeBtn.className = "remove-kind";
-  removeBtn.style.marginLeft = "6px";
-  removeBtn.onclick = () => row.remove();
+  removeBtn.className = "remove-kind ms-2";
+
+  // Client-side check bij het klikken op de verwijderknop
+  removeBtn.onclick = () => {
+    if (hasPayments) {
+      // Toon de kleine fout-popup indien betalingen bestaan
+      showSmallErrorPopup(`Kind '${naam}' kan niet verwijderd worden: er zijn betalingen gekoppeld.`);
+    } else {
+      // Veilig verwijderen
+      row.remove();
+    }
+  };
 
   row.appendChild(nameInput);
   row.appendChild(dateInput);

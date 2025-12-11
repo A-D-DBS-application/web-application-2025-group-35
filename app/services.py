@@ -1,5 +1,5 @@
 # services.py
-from .models import db, Kind, Item, StatusEnum, VerhuurStatusEnum,Adres, LeeftijdEnum, Verantwoordelijke
+from .models import db, Kind, Item, StatusEnum, VerhuurStatusEnum,Adres, LeeftijdEnum, Verantwoordelijke,Betaling
 from sqlalchemy import nulls_last, or_
 from datetime import datetime
 from flask import flash, redirect
@@ -7,30 +7,51 @@ from flask import flash, redirect
 # ---------------------- KLANTEN ----------------------
 
 def update_kinderen(klant, ids, namen, datums):
-    """Synchronise kinderen (toevoegen / bewerken / verwijderen)."""
     bestaande = {k.kind_id: k for k in klant.kinderen}
     ontvangen = set()
+    
+    kinderen_te_verwijderen = [] 
 
-    for kid, naam, datum in zip(ids, namen, datums):
-        if kid:  # bestaand kind
-            kid = int(kid)
-            ontvangen.add(kid)
-            k = bestaande[kid]
-            k.naam = naam
-            k.geboortedatum = datum
-        else:  # nieuw kind
-            if naam.strip():
+    for kid_str, naam, datum_str in zip(ids, namen, datums):
+        datum = parse_date_form(datum_str)
+
+        if kid_str: 
+            try:
+                kid = int(kid_str)
+                ontvangen.add(kid)
+                
+                
+                if kid in bestaande:
+                    k = bestaande[kid]
+                    k.naam = naam
+                    k.geboortedatum = datum 
+            except ValueError:
+                
+                continue
+
+        else:  
+            if naam.strip() and datum:
                 nieuw = Kind(
                     naam=naam,
-                    geboortedatum=datum,
+                    geboortedatum=datum, 
                     verantwoordelijke_id=klant.verantwoordelijke_id
                 )
                 db.session.add(nieuw)
 
-    # verwijder kinderen die niet meer in formulier zitten
-    for kid in list(bestaande.keys()):
-        if kid not in ontvangen:
-            db.session.delete(bestaande[kid])
+   
+    for kind_id, kind_object in bestaande.items():
+        if kind_id not in ontvangen:
+            
+           
+            if db.session.query(Betaling).filter_by(kind_id=kind_id).first():
+                
+                flash(f"Kan kind '{kind_object.naam}' niet verwijderen: er zijn betalingen gekoppeld.", "error")
+            else:
+                
+                kinderen_te_verwijderen.append(kind_object)
+    
+    for kind in kinderen_te_verwijderen:
+        db.session.delete(kind)
 
 
 # ---------------------- FIETSEN ----------------------
@@ -108,17 +129,26 @@ def prepare_klant_kind_data():
     """Haalt alle verantwoordelijken op en structureert hun kindgegevens."""
     verantwoordelijken = Verantwoordelijke.query.all()
     
-    klant_kind_data = {
-        v.verantwoordelijke_id: [{
-            "id": k.kind_id,
-            "naam": k.naam,
-            "leeftijd": k.leeftijd,
-            "geboortedatum": k.geboortedatum.isoformat(),
-        } for k in v.kinderen]
-        for v in verantwoordelijken
-    }
-    return verantwoordelijken, klant_kind_data
+    klant_kind_data = {}
 
+    for v in verantwoordelijken:
+        kinderen_list = []
+
+        for k in v.kinderen:
+            
+            heeft_betalingen = bool(k.betalingen)
+
+            kinderen_list.append({
+                "id": k.kind_id,
+                "naam": k.naam,
+                "leeftijd": k.leeftijd,
+                "geboortedatum": k.geboortedatum.isoformat(),
+                "heeft_betalingen": heeft_betalingen 
+            })
+
+        klant_kind_data[v.verantwoordelijke_id] = kinderen_list
+
+    return verantwoordelijken, klant_kind_data
 def get_enum_or_none(enum_klasse, form_value):
     
     if form_value:

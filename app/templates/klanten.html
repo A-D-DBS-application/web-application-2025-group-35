@@ -99,7 +99,6 @@
     <button type="button" class="btn-cancel mt-2" onclick="closeSmallErrorPopup()">Sluiten</button>
   </div>
 </div>
-
 <!-- KLANT TOEVOEGEN -->
 <div id="add-popup" class="popup-overlay">
   <form class="popup-box" method="POST" action="/klanten/toevoegen">
@@ -146,7 +145,6 @@
 
   </form>
 </div>
-
 <!-- KLANT BEWERKEN -->
 <div id="edit-popup" class="popup-overlay">
   <form id="edit-form" class="popup-box" method="POST">
@@ -192,6 +190,7 @@
   </form>
 </div>
 
+
 <script>
 
 // ——— Kleine error popup ———
@@ -220,7 +219,7 @@ function addChildRow(containerId, naam = "", datum = "", id = "", canDelete = tr
 
   row.querySelector(".remove-kind").onclick = () => {
     if (id && canDelete === false) {
-      showSmallErrorPopup("Dit kind kan niet verwijderd worden omdat er betalingen zijn.");
+      showSmallErrorPopup(`Kind '${naam}' kan niet verwijderd worden: er zijn betalingen gekoppeld.`);
     } else {
       row.remove();
     }
