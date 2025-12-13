@@ -189,7 +189,7 @@ def fietsen():
     )
 
 
-# ✅ GET-formulier toevoegen
+# GET-formulier toevoegen
 @main.get("/fietsen/toevoegen")
 @rol_required(["depotmedewerker", "financieel"])
 def fiets_toevoegen_form():
@@ -277,7 +277,12 @@ def api_lopende_verhuur(kind_id):
 @rol_required(["depotmedewerker", "financieel"])
 def verhuur():
     page = request.args.get("page", 1, type=int)
-    verantwoordelijken, klant_kind_data = prepare_klant_kind_data()
+
+    verantwoordelijken = Verantwoordelijke.query.order_by(
+        Verantwoordelijke.achternaam.asc()
+    ).all() 
+
+    klant_kind_data = prepare_klant_kind_data(verantwoordelijken)
 
     query = Verhuur.query.order_by(Verhuur.startdatum.desc())
     verhuur_lijst, total, pages = paginatie(query, page)
@@ -355,6 +360,7 @@ def verhuur_verleng(verhuur_id):
         return redirect_response
 
     verleng_verhuur(verh, nieuwe_datum)
+    db.session.commit()
     flash("Verhuur verlengd.", "success")
     return redirect("/verhuur")
 
@@ -368,7 +374,11 @@ def financieel():
     query = Betaling.query.order_by(Betaling.datum.desc())
     betalingen, total, pages = paginatie(query, page)
 
-    verantwoordelijken, klant_kind_data = prepare_klant_kind_data()
+    verantwoordelijken = Verantwoordelijke.query.order_by(
+        Verantwoordelijke.achternaam.asc()
+    ).all()
+
+    klant_kind_data = prepare_klant_kind_data(verantwoordelijken)
 
     niet_voltooid = Betaling.query.filter_by(
         betalingswijze=BetalingswijzeEnum.OVERSCHRIJVEN_NIET_VOLDAAN

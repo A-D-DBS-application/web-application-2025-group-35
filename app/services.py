@@ -69,7 +69,7 @@ def set_fiets_beschikbaar(fiets):
 
 def verleng_verhuur(verh, nieuwe_datum):
     verh.einddatum = nieuwe_datum
-    db.session.commit()
+    
 
 
 #   ---------------------- PAGINATIE ----------------------
@@ -125,30 +125,22 @@ def filter_klanten_query(query, search_query):
         
     return query
 
-def prepare_klant_kind_data():
-    """Haalt alle verantwoordelijken op en structureert hun kindgegevens."""
-    verantwoordelijken = Verantwoordelijke.query.all()
-    
+def prepare_klant_kind_data(query):
     klant_kind_data = {}
 
-    for v in verantwoordelijken:
+    for v in query:
         kinderen_list = []
-
         for k in v.kinderen:
-            
-            heeft_betalingen = bool(k.betalingen)
-
             kinderen_list.append({
                 "id": k.kind_id,
                 "naam": k.naam,
                 "leeftijd": k.leeftijd,
                 "geboortedatum": k.geboortedatum.isoformat(),
-                "heeft_betalingen": heeft_betalingen 
+                "heeft_betalingen": bool(k.betalingen),
             })
-
         klant_kind_data[v.verantwoordelijke_id] = kinderen_list
 
-    return verantwoordelijken, klant_kind_data
+    return klant_kind_data
 def get_enum_or_none(enum_klasse, form_value):
     
     if form_value:
