@@ -102,12 +102,10 @@ def filter_klanten_query(query, search_query):
     if search_query:
         search_term = f"%{search_query}%"
         
-        # JOIN Kind en Adres alvorens te filteren
         query = query.join(Adres).join(Kind, isouter=True)
         
         query = query.filter(
             or_(
-                # Verantwoordelijke
                 Verantwoordelijke.voornaam.ilike(search_term),
                 Verantwoordelijke.achternaam.ilike(search_term),
                 Verantwoordelijke.email.ilike(search_term),

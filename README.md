@@ -17,6 +17,7 @@ Our ERD model can be found in the following file
 
 Our DDL model can be found in the following file
 [DDL model](./ddl_model)
+[DDL model pdf](./ddl.pdf)
 
 Our prototype for the user interface can be found here:
 [https://lovable.dev/projects/88e35ab2-471e-49b8-8c1d-96ad8ece0971?magic_link=mc_c16fdb59-d724-48f9-af77-cf4851d468d8]
