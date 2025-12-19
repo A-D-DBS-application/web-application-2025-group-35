@@ -1,5 +1,11 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/DxqGQVx4)
 
+You can find our ppt in this file
+[powerpoint](./opwielekes.pptx)
+
+Our demo can be found in the powerpoint and in this file
+[demo](./demo.mp4)
+
 The necessary installations to use the app can be found in the following file
 to use the app simply go to the run.py file and run the script
 [requirements](./requirements.txt)
